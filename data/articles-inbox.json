@@ -1,8 +1,48 @@
 {
-  "last_updated": "2026-11-20T10:49:21.991615+00:00",
-  "total_articles": 9,
-  "new_articles_today": 0,
+  "last_updated": "2026-11-20T11:36:30.732394+00:00",
+  "total_articles": 12,
+  "new_articles_today": 3,
   "articles": [
+    {
+      "id": "67b7aef0d52029d0",
+      "title": "Sandpapergate controversy",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2641050/sandpapergate-controversy",
+      "published": "2026-11-18T14:41:40+00:00",
+      "author": "editorial",
+      "rss_summary": "Suspensions were intended to demonstrate that misconduct would not be tolerated",
+      "collection_status": "collected",
+      "analysis_status": "completed",
+      "collected_at": "2026-11-20T11:36:30.731003+00:00",
+      "analysed_at": "2026-11-20T11:36:52.191710+00:00"
+    },
+    {
+      "id": "54d609238909486c",
+      "title": "Luxury and poverty",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2641049/luxury-and-poverty",
+      "published": "2026-11-18T14:41:40+00:00",
+      "author": "editorial",
+      "rss_summary": "Assembly Secretariat alone has been allocated Rs2.84 billion, including Rs1.31 billion in non-salary expenses",
+      "collection_status": "collected",
+      "analysis_status": "pending",
+      "collected_at": "2026-11-20T11:36:30.731085+00:00"
+    },
+    {
+      "id": "8e7624c84ba847b9",
+      "title": "Bilawal's contention",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2641048/bilawals-contention",
+      "published": "2026-11-18T14:41:40+00:00",
+      "author": "editorial",
+      "rss_summary": "Bilawal's outburst against the prevailing system has raised eyebrows",
+      "collection_status": "collected",
+      "analysis_status": "pending",
+      "collected_at": "2026-11-20T11:36:30.731160+00:00"
+    },
     {
       "id": "cf1c31cd5ab882eb",
       "title": "Karachi's cultural identity",
