@@ -111,9 +111,19 @@ A=raw.filter(function(r){
  terms:arr(x.important_terminology).map(function(t){
  return typeof t==="string"?t:t.term+" — "+t.definition;
  }),
- facts:arr(x.facts_requiring_verification).map(function(f){
- return "REQUIRES VERIFICATION: "+f;
- }),
+
+facts:arr(x.facts_requiring_verification).map(function(f){
+ if(typeof f==="string"){
+  return "REQUIRES VERIFICATION: "+f;
+ }
+ return [
+  "REQUIRES VERIFICATION: "+(f.claim||"Unspecified claim"),
+  "Claim type: "+(f.claim_type||"Not specified"),
+  "Why verification is needed: "+(f.why_verification_is_needed||"Not specified"),
+  "Recommended source: "+(f.recommended_source||"Not specified")
+ ].join("\n");
+}),
+
  ex:arr(x.possible_exam_questions).map(function(q){
  return [q.question||"","Question type: "+(q.type||"Analytical")];
  }),
