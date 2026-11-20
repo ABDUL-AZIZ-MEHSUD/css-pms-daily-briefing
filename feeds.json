@@ -1,0 +1,19 @@
+
+{
+  "feeds": [
+    {
+      "name": "Dawn",
+      "url": "https://www.dawn.com/feeds/opinion/",
+      "max": 10,
+      "category": "Opinion and Editorials"
+    },
+    {
+      "name": "The Express Tribune",
+      "url": "https://tribune.com.pk/feed/editorial",
+      "max": 10,
+      "category": "Opinion and Editorials"
+    }
+  ],
+  "max_new_articles": 6,
+  "language": "English"
+}
