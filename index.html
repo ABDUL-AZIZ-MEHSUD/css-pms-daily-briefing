@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CSS/PMS Daily Briefing</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f4ee;--card:#fff;--ink:#1c1c1a;--mut:#5a5f5c;--g:#01411C;--acc:#a06f14;--line:#ddd8c8;--chip:#e9dfc6}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#121512;--card:#1b201c;--ink:#ecebe4;--mut:#a5aba6;--g:#6fcf8f;--acc:#e0b04f;--line:#333a34;--chip:#2c3329}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121512;--card:#1b201c;--ink:#ecebe4;--mut:#a5aba6;--g:#6fcf8f;--acc:#e0b04f;--line:#333a34;--chip:#2c3329}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Georgia,'Times New Roman',serif}
+.w{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font:700 26px/1.2 system-ui,Arial,sans-serif;color:var(--g);margin:0}
+.sub{color:var(--mut);font:14px system-ui,Arial,sans-serif;margin:4px 0 14px}
+.note{background:var(--chip);border-radius:8px;padding:10px 14px;font:13.5px/1.5 system-ui,Arial,sans-serif;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--g);border-radius:10px;margin-bottom:18px;padding:16px 18px}
+.meta{font:12.5px system-ui,Arial,sans-serif;color:var(--mut);display:flex;flex-wrap:wrap;gap:8px}
+.b{background:var(--chip);border-radius:4px;padding:1px 7px;font-weight:600}
+.card h2{font:700 22px/1.3 system-ui,Arial,sans-serif;margin:8px 0}
+.card h3{font:700 12.5px system-ui,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);margin:16px 0 4px;border-top:1px solid var(--line);padding-top:12px}
+.card h4{font:700 15px system-ui,Arial,sans-serif;margin:10px 0 2px}
+.card ul,.card ol{margin:2px 0;padding-left:22px}.card li{margin:4px 0}
+.th{background:var(--chip);padding:10px 12px;border-radius:8px;margin:8px 0}
+.q{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0}
+.lnk{display:inline-block;margin-top:12px;font:600 14px system-ui,Arial,sans-serif;color:var(--g)}
+a{color:var(--g)}.also li{font:14px system-ui,Arial,sans-serif}
+</style></head><body><script>var A=[];</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+<style>
+.w{display:none}
+:root{--ui:'Inter',system-ui,Arial,sans-serif;--rd:'Source Serif 4',Georgia,serif;--sh:0 2px 10px rgba(0,0,0,.07)}
+body{font-family:var(--ui)}
+#app{min-height:100vh}
+.top{background:linear-gradient(135deg,#01411C,#0b6b34);color:#fff;padding:18px 16px 14px}
+.top .in{max-width:1100px;margin:0 auto}
+.top h1{font:700 24px/1.2 var(--ui);color:#fff;margin:0}
+.top p{margin:2px 0 12px;opacity:.85;font-size:13.5px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar input{flex:1;min-width:180px;padding:9px 12px;border-radius:8px;border:0;font:14px var(--ui)}
+.nb{border:0;border-radius:8px;padding:8px 13px;font:600 13px var(--ui);cursor:pointer;background:rgba(255,255,255,.16);color:#fff}
+.nb.on{background:#fff;color:#01411C}
+.main{max-width:1100px;margin:0 auto;padding:18px 16px 70px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.st{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;box-shadow:var(--sh)}
+.st b{display:block;font-size:22px;color:var(--g)}.st span{font-size:12px;color:var(--mut)}
+.fl{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+.fl button{font:600 12.5px var(--ui);border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:18px;padding:5px 12px;cursor:pointer}
+.fl button.on{background:var(--g);color:var(--bg);border-color:var(--g)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;margin-top:10px}
+.ac{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:8px;position:relative}
+.ac h3{font:700 18px/1.3 var(--ui);margin:0;padding-right:30px}
+.ac p{margin:0;font:14px/1.55 var(--rd);color:var(--mut)}
+.pp{font:700 11px var(--ui);letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:4px;color:#fff;display:inline-block}
+.tg{font:12px var(--ui);color:var(--mut)}
+.star{position:absolute;right:12px;top:10px;background:none;border:0;font-size:22px;cursor:pointer;color:var(--acc)}
+.rb{margin-top:auto;border:0;background:var(--g);color:var(--bg);border-radius:8px;padding:8px;font:600 13px var(--ui);cursor:pointer}
+.pill{font:600 11px var(--ui);padding:2px 8px;border-radius:10px;background:var(--chip)}
+.pane{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--sh);margin-top:12px}
+.pane h2{font:700 20px var(--ui);margin:0 0 8px;color:var(--g)}.pane p,.pane li{font:15px/1.6 var(--rd)}
+.pane textarea{width:100%;min-height:190px;border:1px solid var(--line);border-radius:8px;padding:10px;font:14px/1.5 var(--rd);background:var(--bg);color:var(--ink)}
+.pane table{width:100%;border-collapse:collapse;font:14px var(--ui)}.pane td,.pane th{border-bottom:1px solid var(--line);padding:8px;text-align:left}
+.rd{position:fixed;inset:0;background:var(--bg);overflow:auto;z-index:50;padding-top:env(safe-area-inset-top,0px)}
+.rd .pg{position:sticky;top:0;height:4px;background:var(--line);z-index:3}.rd .pg i{display:block;height:4px;width:0;background:var(--acc)}
+.tb{position:sticky;top:4px;z-index:3;background:var(--card);border-bottom:1px solid var(--line);padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tb button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;font:600 12.5px var(--ui);cursor:pointer}
+.rw{display:flex;gap:28px;max-width:1040px;margin:0 auto;padding:18px 16px 90px}
+.toc{width:190px;flex:none;position:sticky;top:64px;align-self:flex-start;font:13px/1.9 var(--ui)}
+.toc a{display:block;color:var(--mut);text-decoration:none;border-left:2px solid var(--line);padding-left:10px}.toc a:hover{color:var(--g);border-color:var(--g)}
+@media(max-width:820px){.toc{display:none}}
+.art{flex:1;min-width:0;max-width:720px;font-family:var(--rd);line-height:1.8}
+.art h1{font:700 30px/1.25 var(--ui);margin:6px 0 10px}
+.art h2{font:700 13px var(--ui);letter-spacing:.07em;text-transform:uppercase;color:var(--acc);margin:30px 0 6px;border-top:2px solid var(--line);padding-top:14px}
+.art h3{font:700 16px var(--ui);margin:16px 0 2px}
+.art p,.art li{margin:6px 0}
+.hl{border-left:4px solid var(--acc);background:var(--chip);padding:10px 14px;border-radius:0 8px 8px 0;font-style:italic}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 14px}
+.qa{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;padding:0;list-style:none}
+.terms li{background:var(--chip);border-radius:8px;padding:8px 10px;font:14px/1.45 var(--ui);margin:0}
+.art textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;padding:10px;font:15px/1.5 var(--rd);background:var(--card);color:var(--ink)}
+:root[data-theme="sepia"]{--bg:#f4ecd8;--card:#fbf5e4;--ink:#3b2f1e;--mut:#6d5c43;--line:#dccfae;--chip:#eadfbf}
+@media print{.top,.tb,.toc,.pg{display:none}.rd{position:static}}
+</style>
+<div id="app"></div>
+<script>
+fetch("data/articles.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(D){
+var raw=Array.isArray(D)?D:(D.articles||[]);
+function arr(x){return Array.isArray(x)?x:[]}
+function group(title,items){return items.length?[title,items]:null}
+A=raw.filter(function(r){
+ return r.analysis_status==="completed"&&r.analysis;
+}).map(function(r){
+ var x=r.analysis,es=x.essay_outline||{},ar=x.argument_structure||{},ca=x.critical_analysis||{},pk=x.pakistan_relevance||{};
+ return {
+ p:r.source||"Unknown",t:r.title||"Untitled",d:r.published||"",
+ u:r.url||"",tag:arr(x.css_pms_subjects).join(" · "),
+ thesis:x.central_thesis||"",
+ precis:x.precis||x.executive_summary||"",
+ struct:arr(ar.main_arguments),
+ ctx:arr(pk.connections).concat(arr(pk.challenges),arr(x.international_context)),
+ an:[
+ group("Supporting arguments",arr(ar.supporting_arguments)),
+ group("Counterarguments",arr(ar.counterarguments)),
+ group("Underlying assumptions",arr(ar.underlying_assumptions)),
+ group("Strengths",arr(ca.strengths)),
+ group("Weaknesses",arr(ca.weaknesses)),
+ group("Critical observations",arr(ca.critical_observations)),
+ group("Balanced assessment",ca.balanced_assessment?[ca.balanced_assessment]:[]),
+ group("Policy recommendations",arr(pk.policy_recommendations)),
+ group("Revision points",arr(x.revision_points))
+ ].filter(Boolean),
+ terms:arr(x.important_terminology).map(function(t){
+ return typeof t==="string"?t:t.term+" — "+t.definition;
+ }),
+ facts:arr(x.facts_requiring_verification).map(function(f){
+ return "REQUIRES VERIFICATION: "+f;
+ }),
+ ex:arr(x.possible_exam_questions).map(function(q){
+ return [q.question||"","Question type: "+(q.type||"Analytical")];
+ }),
+ intro:es.introduction||"",
+ concl:es.conclusion||"",
+ essay:[es.title,es.thesis_statement,
+ "Main headings: "+arr(es.main_headings).join("; "),
+ "Arguments: "+arr(es.arguments).join("; "),
+ "Counterarguments: "+arr(es.counterarguments).join("; "),
+ "Way forward: "+arr(es.way_forward).join("; ")
+ ].filter(Boolean).join("\n\n")
+ };
+});
+
+var ST={saved:{},status:{},notes:{},mine:[],fs:18,theme:"auto"};
+try{var o=JSON.parse(localStorage.getItem("cssdash")||"{}");for(var k in o)ST[k]=o[k]}catch(e){}
+function sv(){try{localStorage.setItem("cssdash",JSON.stringify(ST))}catch(e){}}
+function pc(n){var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return n==="Dawn"?"#01411C":"hsl("+h+",55%,36%)"}var PAP=["All"];A.forEach(function(a){if(PAP.indexOf(a.p)<0)PAP.push(a.p)});
+var S={v:"today",q:"",p:"All",s:"All",o:null,msg:""};
+var $=function(i){return document.getElementById(i)};
+function all(){return A.concat(ST.mine)}
+function id(a){return (a.p+"|"+a.t).replace(/\W+/g,"_")}
+function mins(a){var t=JSON.stringify(a).length;return Math.max(4,Math.round(t/1000/1.4))}
+function li(x){return x.map(function(i){return"<li>"+i+"</li>"}).join("")}
+function subj(a){return a.tag.split("·").map(function(x){return x.trim()})}
+function theme(){var t=ST.theme;if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t)}
+function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function card(a){var k=id(a),sd=ST.saved[k],stt=ST.status[k]||"Unread";
+return '<div class="ac"><button class="star" data-a="save" data-k="'+k+'" title="Save">'+(sd?"★":"☆")+'</button><div><span class="pp" style="background:'+pc(a.p)+'">'+esc(a.p)+'</span> <span class="tg">'+esc(a.d||"")+' · '+mins(a)+' min</span></div><h3>'+esc(a.t)+'</h3><p>'+a.thesis+'</p><div class="tg">'+esc(a.tag)+'</div><div><span class="pill">'+stt+'</span></div><button class="rb" data-a="open" data-k="'+k+'">Open study notes</button></div>'}
+function list(){var q=S.q.toLowerCase();return all().filter(function(a){
+if(S.v==="saved"&&!ST.saved[id(a)])return false;
+if(S.p!=="All"&&a.p!==S.p)return false;if(S.s!=="All"&&subj(a).indexOf(S.s)<0)return false;
+return !q||JSON.stringify(a).toLowerCase().indexOf(q)>=0})}
+function chips(arr,cur,act){return arr.map(function(x){return'<button class="'+(x===cur?"on":"")+'" data-a="'+act+'" data-k="'+esc(x)+'">'+esc(x)+'</button>'}).join("")}
+function home(){var L=list(),subs=["All"];all().forEach(function(a){subj(a).forEach(function(x){if(subs.indexOf(x)<0)subs.push(x)})});
+var rev=Object.keys(ST.status).filter(function(k){return ST.status[k]==="Revised"}).length;
+return '<div class="stats"><div class="st"><b>'+all().length+'</b><span>articles analysed</span></div><div class="st"><b>'+Object.keys(ST.saved).filter(function(k){return ST.saved[k]}).length+'</b><span>saved</span></div><div class="st"><b>'+rev+'</b><span>revised</span></div></div>'
++'<div class="fl">'+chips(PAP,S.p,"paper")+'</div><div class="fl">'+chips(subs,S.s,"subj")+'</div>'
++(L.length?'<div class="grid">'+L.map(card).join("")+'</div>':'<div class="pane"><p>No articles match. '+(S.v==="saved"?"Star an article to save it here.":"Try another filter.")+'</p></div>')}
+function sources(){return '<div class="pane"><h2>How this site updates</h2><p>A scheduled job on GitHub runs every morning, reads the newspapers’ feeds, fetches new editorials, asks the OpenAI API for study notes and saves them to data/articles.json. This page then shows them. Only the notes and a link are stored, never the full article. Your saved articles, status and notes stay in this browser.</p></div><div class="pane"><h2>Newspapers shown</h2><ul>'+PAP.slice(1).map(function(p){return"<li>"+esc(p)+"</li>"}).join("")+'</ul></div>'}
+function analyse(){return '<div class="pane"><h2>Analyse any article</h2><p>Paste the text of an editorial or column. Claude will write study notes in the same format: thesis, précis, argument structure, analysis, terms, exam questions and essay outline. Your first use asks for permission.</p><input id="mt" placeholder="Title (optional)" style="width:100%;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><input id="mp" placeholder="Newspaper (e.g. The News)" style="width:100%;padding:8px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><textarea id="mx" placeholder="Paste article text here"></textarea><p><button class="rb" style="padding:9px 16px" data-a="gen">Generate study notes</button> <span id="gs">'+esc(S.msg)+'</span></p></div>'}
+function promptView(){var PR=`TASK: Update my CSS/PMS Daily Briefing dashboard with today's newspaper articles.
+
+DASHBOARD (my own published artifact): https://claude.ai/artifact/KjTyubm2CA5jLd1uVyPz1a
+
+STEPS
+1. Use the Artifact tool with action "read" on the link above to copy the page into the container, then open the HTML file. Do NOT rebuild the page from scratch. Keep its design, scripts and saved-item logic.
+2. Find today's editorials and opinion pieces (use today's real date) from: Dawn (dawn.com/newspaper/editorial and opinion), The Express Tribune (tribune.com.pk/editorial), Business Recorder, The News, The Nation, Pakistan Today. Use web search and web fetch. Choose 4-6 articles most useful for CSS/PMS (Pakistan Affairs, Current Affairs, International Relations, Economy, Governance, Environment, Law, Essay).
+3. Fetch each article in full before writing notes. If an article cannot be fetched, do NOT analyse it from the headline; add it to the "Headlines to analyse next" list on the Sources tab instead.
+4. Add each article to the page with an A.push({...}) call placed after the existing A.push calls (just before the line starting var PAP=). Fields: p (newspaper name), t (title), d (date, e.g. 20 Nov 2026), u (article URL), tag ("Subject · Subject"), thesis, precis (80-120 words, own words), struct (array: paragraph-by-paragraph argument), ctx (array: background), an (array of [heading, [points]] covering causes, stakeholders, implications, policy options), terms (array: "word - meaning"), facts (array of facts and figures from the article), ex (3 pairs of [exam question, answer outline]), intro (model introduction), concl (model conclusion), essay (essay outline). If a newspaper is new, add its name to PAP and a colour to PC.
+5. RULES: Never reproduce the article. Write everything in new words; quote at most about 10 words. Give analysis, not criticism. Mark background that is not from the article as background. Verify facts and figures. Keep each title unchanged once published, because saved items are keyed by newspaper and title.
+6. Before publishing, check the script syntax (for example with node --check) and make sure the page still renders.
+7. Republish to the SAME link (Artifact publish with url and file_path) so my saved articles and notes in the browser are kept. Do not pass new capabilities; the stored ones (downloads, sample) carry forward.
+8. Reply with: the articles added, the ones you could not read, and which newspapers were covered.`;
+return '<div class="pane"><h2>Update prompt</h2><p>Copy this prompt and paste it into a <b>new chat</b> each day (or whenever you want fresh articles). It tells Claude how to read this dashboard, add new articles in the same format and republish it. Your saved articles and notes stay in your browser.</p><textarea id="pt" readonly style="min-height:420px">'+esc(PR)+'</textarea><p><button class="rb" style="padding:9px 16px" data-a="copy">Copy prompt</button></p></div>'}
+function body(a){var k=id(a);
+return '<div class="art"><span class="pp" style="background:'+pc(a.p)+'">'+esc(a.p)+'</span> <span class="tg">'+esc(a.d||"")+' · about '+mins(a)+' min read · '+esc(a.tag)+'</span><h1>'+esc(a.t)+'</h1>'
++'<h2 id="s1">Thesis</h2><p class="hl">'+a.thesis+'</p><h2 id="s2">Précis</h2><p>'+a.precis+'</p><h2 id="s3">How the argument is built</h2><ul>'+li(a.struct)+'</ul><h2 id="s4">Context</h2><ul>'+li(a.ctx)+'</ul><h2 id="s5">Analysis</h2>'
++a.an.map(function(g){return'<h3>'+g[0]+'</h3><ul>'+li(g[1])+'</ul>'}).join("")
++'<h2 id="s6">Key terms</h2><ul class="terms">'+li(a.terms)+'</ul><h2 id="s7">Facts to memorise</h2><div class="fact"><ul>'+li(a.facts)+'</ul></div><h2 id="s8">Exam questions</h2>'
++a.ex.map(function(e){return'<div class="qa"><b>Q.</b> '+e[0]+'<br><b>Outline:</b> '+e[1]+'</div>'}).join("")
++'<h2 id="s9">Model introduction and conclusion</h2><p>'+a.intro+'</p><p>'+a.concl+'</p><h2 id="s10">Essay outline</h2><p>'+a.essay+'</p><h2 id="s11">My notes</h2><textarea id="nt" data-k="'+k+'" placeholder="Write your own notes here (saved on this device)">'+esc(ST.notes[k]||"")+'</textarea>'
++(a.u?'<p><a href="'+a.u+'" target="_blank" rel="noopener">Read the complete article on the newspaper’s site →</a></p>':"")+'</div>'}
+function reader(a){var k=id(a);
+return '<div class="rd" id="rd"><div class="pg"><i id="pgi"></i></div><div class="tb"><button data-a="close">← Back</button><button data-a="fs" data-k="-1">A−</button><button data-a="fs" data-k="1">A+</button><button data-a="th">Theme</button><button data-a="save" data-k="'+k+'">'+(ST.saved[k]?"★ Saved":"☆ Save")+'</button><button data-a="stat" data-k="'+k+'">'+(ST.status[k]||"Unread")+' ⟳</button><button data-a="dl" data-k="'+k+'">Download notes</button><button data-a="print">Print</button></div><div class="rw"><div class="toc"><a href="#s1">Thesis</a><a href="#s2">Précis</a><a href="#s3">Argument</a><a href="#s4">Context</a><a href="#s5">Analysis</a><a href="#s6">Terms</a><a href="#s7">Facts</a><a href="#s8">Exam questions</a><a href="#s9">Intro / conclusion</a><a href="#s10">Essay outline</a><a href="#s11">My notes</a></div>'+body(a)+'</div></div>'}
+function find(k){return all().filter(function(a){return id(a)===k})[0]}
+function render(){var h='<div class="top"><div class="in"><h1>📰 CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' · Study notes from Pakistan’s newspapers</p><div class="bar"><input id="q" placeholder="Search articles, topics, facts…" value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb" data-a="th">Theme</button></div></div></div><div class="main">'
++(S.v==="sources"?sources():home())+'</div>'+(S.o?reader(S.o):"");
+var q=$("q"),had=document.activeElement===q;$("app").innerHTML=h;if(had){q=$("q");q.focus();q.setSelectionRange(q.value.length,q.value.length)}
+theme();if(S.o){var r=$("rd");r.style.fontSize=ST.fs+"px";var art=r.querySelector(".art");art.style.fontSize=ST.fs+"px";r.onscroll=function(){var m=r.scrollHeight-r.clientHeight;$("pgi").style.width=(m>0?r.scrollTop/m*100:0)+"%"}}}
+function txt(a){var k=id(a);return a.p+": "+a.t+"\n"+(a.u||"")+"\n\nTHESIS\n"+a.thesis+"\n\nPRECIS\n"+a.precis+"\n\nARGUMENT\n"+a.struct.join("\n")+"\n\nCONTEXT\n"+a.ctx.join("\n")+"\n\nANALYSIS\n"+a.an.map(function(g){return g[0]+"\n"+g[1].join("\n")}).join("\n\n")+"\n\nTERMS\n"+a.terms.join("\n")+"\n\nFACTS\n"+a.facts.join("\n")+"\n\nQUESTIONS\n"+a.ex.map(function(e){return e[0]+"\n"+e[1]}).join("\n\n")+"\n\nINTRO\n"+a.intro+"\n\nCONCLUSION\n"+a.concl+"\n\nESSAY OUTLINE\n"+a.essay+"\n\nMY NOTES\n"+(ST.notes[k]||"")}
+function plain(h){var d=document.createElement("div");d.innerHTML=h;return d.textContent}
+document.addEventListener("click",function(e){var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,k=b.dataset.k;
+if(a==="v"){S.v=k;S.o=null}else if(a==="paper")S.p=k;else if(a==="subj")S.s=k;
+else if(a==="save"){ST.saved[k]=!ST.saved[k];sv()}
+else if(a==="open"){S.o=find(k);if(S.o&&ST.status[k]!=="Revised"&&!ST.status[k]){ST.status[k]="Reading";sv()}}
+else if(a==="close"){S.o=null}
+else if(a==="fs"){ST.fs=Math.min(26,Math.max(14,ST.fs+(+k)*2));sv()}
+else if(a==="th"){var T=["auto","dark","sepia","light"];ST.theme=T[(T.indexOf(ST.theme)+1)%4];sv()}
+else if(a==="stat"){var c=["Unread","Reading","Revised"];ST.status[k]=c[(c.indexOf(ST.status[k]||"Unread")+1)%3];sv()}
+else if(a==="print"){window.print();return}
+else if(a==="dl"){var x=find(k),data=txt(x);var bl=new Blob([data],{type:"text/plain"}),u=URL.createObjectURL(bl),l=document.createElement("a");l.href=u;l.download=x.t.replace(/\W+/g,"_")+".txt";l.click();return}
+else if(a==="gen"){gen();return}else if(a==="copy"){var ta=$("pt");ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}if(!ok&&navigator.clipboard)navigator.clipboard.writeText(ta.value);b.textContent="Copied ✓";return}
+var sc=S.o&&$("rd")?$("rd").scrollTop:0;render();if(S.o&&$("rd"))$("rd").scrollTop=sc});
+document.addEventListener("input",function(e){if(e.target.id==="q"){S.q=e.target.value;render()}else if(e.target.id==="nt"){ST.notes[e.target.dataset.k]=e.target.value;sv()}});
+function gen(){var x=$("mx").value.trim();if(x.length<400){S.msg="Please paste at least a few paragraphs.";$("gs").textContent=S.msg;return}
+if(!(window.claude&&claude.use)){$("gs").textContent="Not available in this view.";return}
+$("gs").textContent="Reading the article…";
+claude.use("sample").then(function(sm){if(!sm){$("gs").textContent="Generation is not available in this view.";return}
+var t=$("mt").value||"Pasted article",p=$("mp").value||"My analysis";
+var pr="You are a CSS/PMS exam tutor in Pakistan. Analyse the article below and return ONLY JSON with keys: thesis (string), precis (string, 80-120 words, own words), struct (array of strings), ctx (array of strings), an (array of [heading, array of strings] pairs covering causes, stakeholders, implications, policy options), terms (array of 'word – meaning'), facts (array of strings taken from the article), ex (array of [question, answer outline] pairs, 3 items), intro (string), concl (string), essay (string), tag (string like 'Governance · Economy'). Do not quote more than 10 consecutive words from the article. Article:\n\n"+x.slice(0,14000);
+return sm.json(pr).then(function(r){["struct","ctx","an","terms","facts","ex"].forEach(function(f){if(!Array.isArray(r[f]))r[f]=[]});["thesis","precis","intro","concl","essay"].forEach(function(f){if(typeof r[f]!=="string")r[f]=""});r.t=t;r.p=p;r.d="Added "+new Date().toLocaleDateString("en-GB");r.u="";if(!r.tag)r.tag="General";ST.mine.push(r);sv();S.v="today";S.o=r;render()})}).catch(function(err){$("gs").textContent="Could not generate notes ("+(err&&err.code||"error")+"). Try again later."})}
+render();
+}).catch(function(e){document.getElementById("app").innerHTML="<p style='padding:20px'>Could not load data/articles.json</p>"});
+</script>
+</body></html>
