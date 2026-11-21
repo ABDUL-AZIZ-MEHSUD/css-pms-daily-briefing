@@ -1,5 +1,4 @@
-
-name: CSS PMS Daily Briefing
+﻿name: CSS PMS Daily Briefing
 
 on:
   schedule:
@@ -19,13 +18,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Firebase dependencies
+        run: npm ci --prefix functions
+
+      - name: Configure Firebase credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-key.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-key.json" >> "$GITHUB_ENV"
+
+      - name: Pull existing articles from Firestore
+        run: node scripts/firestore-sync.js pull
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -35,13 +54,15 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4o-mini
           MAX_ANALYSES: "6"
-        run: |
-          python scripts/update.py
+        run: python scripts/update.py
 
-      - name: Commit updated briefing data
+      - name: Push updated articles to Firestore
+        run: node scripts/firestore-sync.js push
+
+      - name: Commit updated inbox only
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/articles-inbox.json data/articles.json
-          git diff --cached --quiet || git commit -m "Update daily CSS PMS briefing"
+          git add data/articles-inbox.json
+          git diff --cached --quiet || git commit -m "Update daily CSS PMS article inbox"
           git push

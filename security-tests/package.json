@@ -1,0 +1,17 @@
+﻿{
+  "name": "security-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-css-pms-security-test \"node ./firestore.rules.test.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.4.0"
+  }
+}

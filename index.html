@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CSS/PMS Daily Briefing</title>
@@ -110,8 +110,13 @@ body{font-family:var(--ui)}
 
 </style>
 <div id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-access.js"></script>
 <script>
-fetch("data/articles.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(D){
+loadArticlesFromFirestore().then(function(D){
 var raw=Array.isArray(D)?D:(D.articles||[]);
 function arr(x){return Array.isArray(x)?x:[]}
 function group(title,items){return items.length?[title,items]:null}
@@ -189,7 +194,7 @@ A=raw.filter(function(r){
  }),
 
 
-mcqs: arr(x.mcqs).slice(0,5).map(function(q){
+mcqs: arr(x.mcqs||r.mcqs).slice(0,5).map(function(q){
   return {
     question: q.question || "",
     options: arr(q.options).slice(0,4),
@@ -616,3 +621,4 @@ render();
 });
 </script>
 </body></html>
+

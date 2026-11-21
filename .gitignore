@@ -28,3 +28,9 @@ Thumbs.db
 # Editor settings
 .vscode/
 .idea/
+
+# Node.js dependencies
+node_modules/
+
+# Keep article data private; use Firestore for the website
+/data/articles.json
