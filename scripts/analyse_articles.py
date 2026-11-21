@@ -299,49 +299,112 @@ Produce the following JSON structure:
   }},
   "international_context": [],
   "css_pms_subjects": [],
+  "facts_to_memorise": [
+    {{
+      "category": "Statistic",
+      "content": "",
+      "attribution": "",
+      "context": ""
+    }}
+  ],
+  "facts_requiring_verification": [
+    {{
+      "claim": "",
+      "claim_type": "Statistical",
+      "why_verification_is_needed": "",
+      "recommended_source": ""
+    }}
+  ],
   "possible_exam_questions": [
     {{
       "question": "",
-      "type": "Analytical"
+      "type": "Analytical",
+      "model_answer": ""
     }}
   ],
+  "model_introduction": "",
   "essay_outline": {{
     "title": "",
     "thesis_statement": "",
-    "introduction": "",
-    "main_headings": [],
-    "arguments": [],
-    "counterarguments": [],
-    "way_forward": [],
+    "main_headings": [
+      {{
+        "heading": "",
+        "subheadings": []
+      }}
+    ],
     "conclusion": ""
   }},
+  "mcqs": [
+    {{
+      "question": "",
+      "options": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correct_option": 0,
+      "explanation": ""
+    }}
+  ],
   "revision_points": [],
-"facts_requiring_verification": [
-        {{
-        "claim": "",
-        "claim_type": "Statistical",
-        "why_verification_is_needed": "",
-        "recommended_source": ""
-        }}
-],
   "difficulty": "Intermediate",
   "relevance_score": 8
 }}
 
 QUALITY REQUIREMENTS:
 
-- Write a meaningful executive summary.
-- Make the precis concise and coherent.
-- Explain the logic behind the author's arguments.
-- Provide substantive critical evaluation.
+GENERAL ANALYSIS
+- Write a meaningful executive summary and a concise, coherent precis.
+- Explain the author's arguments, evidence, assumptions and reasoning.
+- Provide substantive critical evaluation, counterarguments and balanced assessment.
 - Include at least five useful terminology entries.
-- Generate at least five relevant examination questions.
-- Make the essay outline sufficiently detailed for
-  developing a competitive examination essay.
-- Give practical and realistic policy recommendations.
+- Give realistic Pakistan-specific policy recommendations.
+- Use only information supported by the editorial or clearly labelled analytical inference.
+
+FACTS TO MEMORISE
+- Extract all significant statistics, numerical figures, percentages, dates, years, names, institutions, reports, events, constitutional references and other concrete evidence appearing in the original article.
+- Include short, useful quotations, sayings and attributed statements where present. Preserve their wording accurately and identify the speaker or source.
+- Do not invent, estimate, complete or alter any statistic, quotation, date, name or attribution.
+- Do not present an author's allegation or an attributed claim as independently verified fact. Preserve its attribution.
+- Keep each entry concise and useful for examination revision.
+- Use categories such as Statistic, Date, Quotation, Saying, Person, Institution, Report, Event and Key Statement.
+- If the article contains no relevant material for a category, do not manufacture an entry.
+
+EXAM QUESTIONS
+- Generate five relevant CSS/PMS-level questions.
+- Each model answer must contain strictly 45?60 words and 3?4 sentences.
+- Keep answers concise, direct, analytical and easy to revise; include only the strongest relevant arguments and article-based evidence.
+- Answers must directly address the question, demonstrate analysis and use article-based evidence where available.
+- Avoid generic answers and unsupported claims.
+
+MODEL INTRODUCTION
+- Write exactly one model essay introduction of approximately 100 words.
+- It must establish context, introduce the central issue, present a clear thesis and indicate the direction of the argument.
+- Do not generate a model conclusion in this section.
+
+ESSAY OUTLINE
+- Provide a developed, logically sequenced competitive-examination essay outline.
+- Number main headings using 1, 2, 3, 4 and so on.
+- Number each heading's subheadings using Roman numerals i, ii, iii and so on.
+- Include a coherent introduction framework, conceptual background, causes or dimensions, critical evaluation, Pakistan-specific implications, counterarguments where relevant, recommendations and a concluding heading.
+- Keep every heading relevant to the central thesis. Avoid repetition.
+
+MCQs
+- Generate exactly five article-specific multiple-choice questions.
+- Give exactly four distinct options per question.
+- There must be exactly one correct option.
+- Set correct_option as a zero-based integer: 0 for the first option, 1 for the second, 2 for the third and 3 for the fourth.
+- Provide a concise explanation identifying why the correct answer is right.
+- Questions should test important facts, concepts, institutions, arguments and implications from the article.
+- Never use invented facts or ambiguous questions.
+
+VERIFICATION AND QUALITY CONTROL
+- Keep facts_requiring_verification separate from facts_to_memorise.
+- Flag important factual or legal claims that need independent verification.
+- Check that all requested arrays and fields are populated appropriately.
 - Keep the relevance score between 1 and 10.
-- Use only information supported by the editorial
-  or clearly labelled analytical inference.
+- Return valid JSON only, following the exact schema.
 """
 
     response = client.responses.create(
@@ -365,6 +428,42 @@ QUALITY REQUIREMENTS:
     )
 
     result = json.loads(response.output_text)
+
+    # Validate all five CSS/PMS model answers.
+    import re
+
+    questions = result.get("possible_exam_questions", [])
+
+    if len(questions) != 5:
+        raise ValueError(
+            f"Expected exactly 5 exam questions, found {len(questions)}."
+        )
+
+    errors = []
+
+    for i, question in enumerate(questions, 1):
+        answer = question.get("model_answer", "").strip()
+        word_count = len(answer.split())
+        sentence_count = len(
+            re.findall(r"[^.!?]+(?:[.!?]+|$)", answer)
+        )
+
+        if not 45 <= word_count <= 60:
+            errors.append(
+                f"Answer {i}: {word_count} words (required: 45?60)"
+            )
+
+        if not 3 <= sentence_count <= 4:
+            errors.append(
+                f"Answer {i}: {sentence_count} sentences (required: 3?4)"
+            )
+
+    if errors:
+        raise ValueError(
+            "Model-answer validation failed:\n" + "\n".join(errors)
+        )
+
+    print("PASS: All five model answers meet the 45?60 word and 3?4 sentence standard.")
 
     return result
 

@@ -79,6 +79,35 @@ body{font-family:var(--ui)}
 .art textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;padding:10px;font:15px/1.5 var(--rd);background:var(--card);color:var(--ink)}
 :root[data-theme="sepia"]{--bg:#f4ecd8;--card:#fbf5e4;--ink:#3b2f1e;--mut:#6d5c43;--line:#dccfae;--chip:#eadfbf}
 @media print{.top,.tb,.toc,.pg{display:none}.rd{position:static}}
+
+/* Redesigned CSS/PMS study sections */
+.art .fact{margin:10px 0 18px;padding:12px 18px}
+.art .fact ul{padding-left:22px}
+.art .fact li{margin:9px 0;line-height:1.65}
+.art .qa{padding:14px 17px;margin:13px 0}
+.art .qa p{line-height:1.7}
+.art .qa small{display:block;color:var(--mut);font:12px var(--ui);margin-top:8px}
+.art .quiz{margin:12px 0 24px}
+.art .mcq-option{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin:7px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);font:14px/1.5 var(--ui);cursor:pointer}
+.art .mcq-option:hover{border-color:var(--acc)}
+.art .mcq-option input{margin-top:4px;accent-color:var(--g);flex:none}
+.art .mcq-option input:disabled{cursor:not-allowed}
+.art .quiz-explanation{padding:9px 12px;border-left:3px solid var(--acc);background:var(--chip);border-radius:4px;font:14px/1.6 var(--ui)}
+.art .quiz-result{font:700 20px var(--ui);margin:18px 0}
+.art .quiz button{border:0;background:var(--g);color:#fff;border-radius:8px;padding:10px 18px;font:600 14px var(--ui);cursor:pointer}
+.art .quiz button:hover{filter:brightness(1.12)}
+.art #quiz-msg{color:#b45309;font:13px var(--ui)}
+.art ol[type="i"]{padding-left:30px;margin:3px 0 14px}
+.art ol[type="i"] li{padding-left:5px;margin:4px 0}
+.art h3{line-height:1.45}
+@media(max-width:600px){
+ .rw{padding:12px 12px 70px}
+ .art h1{font-size:25px}
+ .art .mcq-option{padding:11px 9px}
+ .tb{gap:5px;padding:7px}
+ .tb button{padding:7px 8px;font-size:12px}
+}
+
 </style>
 <div id="app"></div>
 <script>
@@ -90,13 +119,18 @@ A=raw.filter(function(r){
  return r.analysis_status==="completed"&&r.analysis;
 }).map(function(r){
  var x=r.analysis,es=x.essay_outline||{},ar=x.argument_structure||{},ca=x.critical_analysis||{},pk=x.pakistan_relevance||{};
+
  return {
- p:r.source||"Unknown",t:r.title||"Untitled",d:r.published||"",
- u:r.url||"",tag:arr(x.css_pms_subjects).join(" · "),
+ p:r.source||"Unknown",
+ t:r.title||"Untitled",
+ d:r.published||"",
+ u:r.url||"",
+ tag:arr(x.css_pms_subjects).join(" | "),
  thesis:x.central_thesis||"",
  precis:x.precis||x.executive_summary||"",
  struct:arr(ar.main_arguments),
  ctx:arr(pk.connections).concat(arr(pk.challenges),arr(x.international_context)),
+
  an:[
  group("Supporting arguments",arr(ar.supporting_arguments)),
  group("Counterarguments",arr(ar.counterarguments)),
@@ -108,37 +142,70 @@ A=raw.filter(function(r){
  group("Policy recommendations",arr(pk.policy_recommendations)),
  group("Revision points",arr(x.revision_points))
  ].filter(Boolean),
+
  terms:arr(x.important_terminology).map(function(t){
- return typeof t==="string"?t:t.term+" — "+t.definition;
+  return typeof t==="string"?t:(t.term||"")+" | "+(t.definition||"");
  }),
 
-facts:arr(x.facts_requiring_verification).map(function(f){
- if(typeof f==="string"){
-  return "REQUIRES VERIFICATION: "+f;
- }
- return [
-  "REQUIRES VERIFICATION: "+(f.claim||"Unspecified claim"),
-  "Claim type: "+(f.claim_type||"Not specified"),
-  "Why verification is needed: "+(f.why_verification_is_needed||"Not specified"),
-  "Recommended source: "+(f.recommended_source||"Not specified")
- ].join("\n");
-}),
+ facts:arr(x.facts_to_memorise).map(function(f){
+  if(typeof f==="string")return f;
+  return [
+   f.category||"Fact",
+   f.content||"",
+   f.attribution?"Attribution: "+f.attribution:"",
+   f.context?"Context: "+f.context:""
+  ].filter(Boolean).join(" | ");
+ }),
+
+ verification:arr(x.facts_requiring_verification).map(function(f){
+  if(typeof f==="string")return f;
+  return [
+   f.claim||"Unspecified claim",
+   "Claim type: "+(f.claim_type||"Not specified"),
+   "Why verification is needed: "+(f.why_verification_is_needed||"Not specified"),
+   "Recommended source: "+(f.recommended_source||"Not specified")
+  ].join("\n");
+ }),
 
  ex:arr(x.possible_exam_questions).map(function(q){
- return [q.question||"","Question type: "+(q.type||"Analytical")];
+  return [
+   q.question||"",
+   q.model_answer||q.answer||"Model answer not available in this older analysis.",
+   q.type||"Analytical"
+  ];
  }),
- intro:es.introduction||"",
- concl:es.conclusion||"",
- essay:[es.title,es.thesis_statement,
- "Main headings: "+arr(es.main_headings).join("; "),
- "Arguments: "+arr(es.arguments).join("; "),
- "Counterarguments: "+arr(es.counterarguments).join("; "),
- "Way forward: "+arr(es.way_forward).join("; ")
- ].filter(Boolean).join("\n\n")
- };
+
+ intro:x.model_introduction||es.introduction||"",
+ essayTitle:es.title||"",
+ essayThesis:es.thesis_statement||"",
+ essay:arr(es.main_headings).map(function(h,i){
+  if(typeof h==="string"){
+   return {heading:(i+1)+". "+h,subheadings:[]};
+  }
+  return {
+   heading:h.heading||((i+1)+". Untitled heading"),
+   subheadings:arr(h.subheadings)
+  };
+ }),
+
+
+mcqs: arr(x.mcqs).slice(0,5).map(function(q){
+  return {
+    question: q.question || "",
+    options: arr(q.options).slice(0,4),
+    correct_option:
+      Number.isInteger(q.correct_option) &&
+      q.correct_option >= 0 &&
+      q.correct_option <= 3
+        ? q.correct_option
+        : -1,
+    explanation: q.explanation || ""
+  };
+})
+};
 });
 
-var ST={saved:{},status:{},notes:{},mine:[],fs:18,theme:"auto"};
+var ST={saved:{},status:{},notes:{},mcqAnswers:{},mcqSubmitted:{},mine:[],fs:18,theme:"auto"};
 try{var o=JSON.parse(localStorage.getItem("cssdash")||"{}");for(var k in o)ST[k]=o[k]}catch(e){}
 function sv(){try{localStorage.setItem("cssdash",JSON.stringify(ST))}catch(e){}}
 function pc(n){var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return n==="Dawn"?"#01411C":"hsl("+h+",55%,36%)"}var PAP=["All"];A.forEach(function(a){if(PAP.indexOf(a.p)<0)PAP.push(a.p)});
@@ -147,12 +214,22 @@ var $=function(i){return document.getElementById(i)};
 function all(){return A.concat(ST.mine)}
 function id(a){return (a.p+"|"+a.t).replace(/\W+/g,"_")}
 function mins(a){var t=JSON.stringify(a).length;return Math.max(4,Math.round(t/1000/1.4))}
-function li(x){return x.map(function(i){return"<li>"+i+"</li>"}).join("")}
-function subj(a){return a.tag.split("·").map(function(x){return x.trim()})}
+function li(x){return x.map(function(i){return"<li>"+esc(i)+"</li>"}).join("")}
+function subj(a){return a.tag.split("|").map(function(x){return x.trim()})}
 function theme(){var t=ST.theme;if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t)}
-function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function esc(t){
+ return String(t)
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;")
+  .replace(/'/g,"&#39;");
+}
 function card(a){var k=id(a),sd=ST.saved[k],stt=ST.status[k]||"Unread";
-return '<div class="ac"><button class="star" data-a="save" data-k="'+k+'" title="Save">'+(sd?"★":"☆")+'</button><div><span class="pp" style="background:'+pc(a.p)+'">'+esc(a.p)+'</span> <span class="tg">'+esc(a.d||"")+' · '+mins(a)+' min</span></div><h3>'+esc(a.t)+'</h3><p>'+a.thesis+'</p><div class="tg">'+esc(a.tag)+'</div><div><span class="pill">'+stt+'</span></div><button class="rb" data-a="open" data-k="'+k+'">Open study notes</button></div>'}
+
+return '<div class="ac"><button class="star" data-a="save" data-k="'+k+'" title="Save">'+(sd?"&#9733;":"&#9734;")+'</button><div><span class="pp" style="background:'+pc(a.p)+'">'+esc(a.p)+'</span> <span class="tg">'+esc(a.d||"")+' | '+mins(a)+' min</span></div><h3>'+esc(a.t)+'</h3><p>'+esc(a.thesis)+'</p><div class="tg">'+esc(a.tag)+'</div><div><span class="pill">'+esc(stt)+'</span></div><button class="rb" data-a="open" data-k="'+k+'">Open study notes</button></div>';
+
+}
 function list(){var q=S.q.toLowerCase();return all().filter(function(a){
 if(S.v==="saved"&&!ST.saved[id(a)])return false;
 if(S.p!=="All"&&a.p!==S.p)return false;if(S.s!=="All"&&subj(a).indexOf(S.s)<0)return false;
@@ -163,8 +240,8 @@ var rev=Object.keys(ST.status).filter(function(k){return ST.status[k]==="Revised
 return '<div class="stats"><div class="st"><b>'+all().length+'</b><span>articles analysed</span></div><div class="st"><b>'+Object.keys(ST.saved).filter(function(k){return ST.saved[k]}).length+'</b><span>saved</span></div><div class="st"><b>'+rev+'</b><span>revised</span></div></div>'
 +'<div class="fl">'+chips(PAP,S.p,"paper")+'</div><div class="fl">'+chips(subs,S.s,"subj")+'</div>'
 +(L.length?'<div class="grid">'+L.map(card).join("")+'</div>':'<div class="pane"><p>No articles match. '+(S.v==="saved"?"Star an article to save it here.":"Try another filter.")+'</p></div>')}
-function sources(){return '<div class="pane"><h2>How this site updates</h2><p>A scheduled job on GitHub runs every morning, reads the newspapers’ feeds, fetches new editorials, asks the OpenAI API for study notes and saves them to data/articles.json. This page then shows them. Only the notes and a link are stored, never the full article. Your saved articles, status and notes stay in this browser.</p></div><div class="pane"><h2>Newspapers shown</h2><ul>'+PAP.slice(1).map(function(p){return"<li>"+esc(p)+"</li>"}).join("")+'</ul></div>'}
-function analyse(){return '<div class="pane"><h2>Analyse any article</h2><p>Paste the text of an editorial or column. Claude will write study notes in the same format: thesis, précis, argument structure, analysis, terms, exam questions and essay outline. Your first use asks for permission.</p><input id="mt" placeholder="Title (optional)" style="width:100%;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><input id="mp" placeholder="Newspaper (e.g. The News)" style="width:100%;padding:8px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><textarea id="mx" placeholder="Paste article text here"></textarea><p><button class="rb" style="padding:9px 16px" data-a="gen">Generate study notes</button> <span id="gs">'+esc(S.msg)+'</span></p></div>'}
+function sources(){return '<div class="pane"><h2>How this site updates</h2><p>A scheduled job on GitHub runs every morning, reads the newspaper feeds, fetches new editorials, asks the OpenAI API for study notes and saves them to data/articles.json. This page then shows them. Only the notes and a link are stored, never the full article. Your saved articles, status and notes stay in this browser.</p></div><div class="pane"><h2>Newspapers shown</h2><ul>'+PAP.slice(1).map(function(p){return"<li>"+esc(p)+"</li>"}).join("")+'</ul></div>'}
+function analyse(){return '<div class="pane"><h2>Analyse any article</h2><p>Paste the text of an editorial or column. Claude will write study notes in the same format: thesis, precis, argument structure, analysis, terms, exam questions and essay outline. Your first use asks for permission.</p><input id="mt" placeholder="Title (optional)" style="width:100%;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><input id="mp" placeholder="Newspaper (e.g. The News)" style="width:100%;padding:8px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><textarea id="mx" placeholder="Paste article text here"></textarea><p><button class="rb" style="padding:9px 16px" data-a="gen">Generate study notes</button> <span id="gs">'+esc(S.msg)+'</span></p></div>'}
 function promptView(){var PR=`TASK: Update my CSS/PMS Daily Briefing dashboard with today's newspaper articles.
 
 DASHBOARD (my own published artifact): https://claude.ai/artifact/KjTyubm2CA5jLd1uVyPz1a
@@ -173,30 +250,145 @@ STEPS
 1. Use the Artifact tool with action "read" on the link above to copy the page into the container, then open the HTML file. Do NOT rebuild the page from scratch. Keep its design, scripts and saved-item logic.
 2. Find today's editorials and opinion pieces (use today's real date) from: Dawn (dawn.com/newspaper/editorial and opinion), The Express Tribune (tribune.com.pk/editorial), Business Recorder, The News, The Nation, Pakistan Today. Use web search and web fetch. Choose 4-6 articles most useful for CSS/PMS (Pakistan Affairs, Current Affairs, International Relations, Economy, Governance, Environment, Law, Essay).
 3. Fetch each article in full before writing notes. If an article cannot be fetched, do NOT analyse it from the headline; add it to the "Headlines to analyse next" list on the Sources tab instead.
-4. Add each article to the page with an A.push({...}) call placed after the existing A.push calls (just before the line starting var PAP=). Fields: p (newspaper name), t (title), d (date, e.g. 20 Nov 2026), u (article URL), tag ("Subject · Subject"), thesis, precis (80-120 words, own words), struct (array: paragraph-by-paragraph argument), ctx (array: background), an (array of [heading, [points]] covering causes, stakeholders, implications, policy options), terms (array: "word - meaning"), facts (array of facts and figures from the article), ex (3 pairs of [exam question, answer outline]), intro (model introduction), concl (model conclusion), essay (essay outline). If a newspaper is new, add its name to PAP and a colour to PC.
+4. Add each article to the page with an A.push({...}) call placed after the existing A.push calls (just before the line starting var PAP=). Fields: p (newspaper name), t (title), d (date, e.g. 20 Nov 2026), u (article URL), tag ("Subject | Subject"), thesis, precis (80-120 words, own words), struct (array: paragraph-by-paragraph argument), ctx (array: background), an (array of [heading, [points]] covering causes, stakeholders, implications, policy options), terms (array: "word - meaning"), facts (array of facts and figures from the article), ex (3 pairs of [exam question, answer outline]), intro (model introduction), concl (model conclusion), essay (essay outline). If a newspaper is new, add its name to PAP and a colour to PC.
 5. RULES: Never reproduce the article. Write everything in new words; quote at most about 10 words. Give analysis, not criticism. Mark background that is not from the article as background. Verify facts and figures. Keep each title unchanged once published, because saved items are keyed by newspaper and title.
 6. Before publishing, check the script syntax (for example with node --check) and make sure the page still renders.
 7. Republish to the SAME link (Artifact publish with url and file_path) so my saved articles and notes in the browser are kept. Do not pass new capabilities; the stored ones (downloads, sample) carry forward.
 8. Reply with: the articles added, the ones you could not read, and which newspapers were covered.`;
 return '<div class="pane"><h2>Update prompt</h2><p>Copy this prompt and paste it into a <b>new chat</b> each day (or whenever you want fresh articles). It tells Claude how to read this dashboard, add new articles in the same format and republish it. Your saved articles and notes stay in your browser.</p><textarea id="pt" readonly style="min-height:420px">'+esc(PR)+'</textarea><p><button class="rb" style="padding:9px 16px" data-a="copy">Copy prompt</button></p></div>'}
-function body(a){var k=id(a);
-return '<div class="art"><span class="pp" style="background:'+pc(a.p)+'">'+esc(a.p)+'</span> <span class="tg">'+esc(a.d||"")+' · about '+mins(a)+' min read · '+esc(a.tag)+'</span><h1>'+esc(a.t)+'</h1>'
-+'<h2 id="s1">Thesis</h2><p class="hl">'+a.thesis+'</p><h2 id="s2">Précis</h2><p>'+a.precis+'</p><h2 id="s3">How the argument is built</h2><ul>'+li(a.struct)+'</ul><h2 id="s4">Context</h2><ul>'+li(a.ctx)+'</ul><h2 id="s5">Analysis</h2>'
-+a.an.map(function(g){return'<h3>'+g[0]+'</h3><ul>'+li(g[1])+'</ul>'}).join("")
-+'<h2 id="s6">Key terms</h2><ul class="terms">'+li(a.terms)+'</ul><h2 id="s7">Facts to memorise</h2><div class="fact"><ul>'+li(a.facts)+'</ul></div><h2 id="s8">Exam questions</h2>'
-+a.ex.map(function(e){return'<div class="qa"><b>Q.</b> '+e[0]+'<br><b>Outline:</b> '+e[1]+'</div>'}).join("")
-+'<h2 id="s9">Model introduction and conclusion</h2><p>'+a.intro+'</p><p>'+a.concl+'</p><h2 id="s10">Essay outline</h2><p>'+a.essay+'</p><h2 id="s11">My notes</h2><textarea id="nt" data-k="'+k+'" placeholder="Write your own notes here (saved on this device)">'+esc(ST.notes[k]||"")+'</textarea>'
-+(a.u?'<p><a href="'+a.u+'" target="_blank" rel="noopener">Read the complete article on the newspaper’s site →</a></p>':"")+'</div>'}
-function reader(a){var k=id(a);
-return '<div class="rd" id="rd"><div class="pg"><i id="pgi"></i></div><div class="tb"><button data-a="close">← Back</button><button data-a="fs" data-k="-1">A−</button><button data-a="fs" data-k="1">A+</button><button data-a="th">Theme</button><button data-a="save" data-k="'+k+'">'+(ST.saved[k]?"★ Saved":"☆ Save")+'</button><button data-a="stat" data-k="'+k+'">'+(ST.status[k]||"Unread")+' ⟳</button><button data-a="dl" data-k="'+k+'">Download notes</button><button data-a="print">Print</button></div><div class="rw"><div class="toc"><a href="#s1">Thesis</a><a href="#s2">Précis</a><a href="#s3">Argument</a><a href="#s4">Context</a><a href="#s5">Analysis</a><a href="#s6">Terms</a><a href="#s7">Facts</a><a href="#s8">Exam questions</a><a href="#s9">Intro / conclusion</a><a href="#s10">Essay outline</a><a href="#s11">My notes</a></div>'+body(a)+'</div></div>'}
-function find(k){return all().filter(function(a){return id(a)===k})[0]}
-function render(){var h='<div class="top"><div class="in"><h1>📰 CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' · Study notes from Pakistan’s newspapers</p><div class="bar"><input id="q" placeholder="Search articles, topics, facts…" value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb" data-a="th">Theme</button></div></div></div><div class="main">'
+function body(a){
+var k=id(a),answers=ST.mcqAnswers[k]||{},submitted=!!ST.mcqSubmitted[k];
+
+var quiz=a.mcqs.length?'<div class="quiz">'+a.mcqs.map(function(q,i){
+ var selected=answers[i],correct=selected===q.correct_option;
+ return '<div class="qa"><h3>Q'+(i+1)+'. '+esc(q.question)+'</h3>'+
+ q.options.map(function(op,j){
+  return '<label class="mcq-option"><input type="radio" name="quiz_'+k+'_'+i+'" value="'+j+'" data-quiz="'+k+'" data-index="'+i+'" '+(selected===j?'checked':'')+' '+(submitted?'disabled':'')+'> '+esc(op)+'</label>';
+ }).join("")+
+ (submitted?'<p class="quiz-explanation"><b>'+(correct?'Correct.':'Incorrect.')+'</b> '+(correct?'':('Correct answer: '+esc(q.options[q.correct_option]||"Not specified")+'. '))+esc(q.explanation)+'</p>':'')+
+ '</div>';
+}).join("")+
+(submitted?'<p class="quiz-result"><b>Result: '+a.mcqs.filter(function(q,i){return answers[i]===q.correct_option}).length+' / '+a.mcqs.length+'</b></p><button data-a="mcq-retry" data-k="'+k+'">Try again</button>':'<p id="quiz-msg"></p><button data-a="mcq-submit" data-k="'+k+'">Submit answers</button>')+
+'</div>':'<p>MCQs are not available for this older analysis.</p>';
+
+return '<div class="art"><span class="pp" style="background:'+pc(a.p)+'">'+esc(a.p)+'</span> <span class="tg">'+esc(a.d||"")+' | about '+mins(a)+' min read | '+esc(a.tag)+'</span><h1>'+esc(a.t)+'</h1>'+
+'<h2 id="s1">Central thesis</h2><p class="hl">'+esc(a.thesis)+'</p>'+
+'<h2 id="s2">Precis</h2><p>'+esc(a.precis)+'</p>'+
+'<h2 id="s3">How the argument is built</h2><ul>'+li(a.struct)+'</ul>'+
+'<h2 id="s4">Context</h2><ul>'+li(a.ctx)+'</ul>'+
+'<h2 id="s5">Critical analysis</h2>'+
+a.an.map(function(g){return '<h3>'+esc(g[0])+'</h3><ul>'+li(g[1])+'</ul>'}).join("")+
+'<h2 id="s6">Key terms</h2><ul class="terms">'+li(a.terms)+'</ul>'+
+'<h2 id="s7">Facts to memorise</h2><div class="fact"><ul>'+li(a.facts.length?a.facts:['Memorisation facts are not available in this older analysis.'])+'</ul></div>'+
+(a.verification.length?'<h3>Claims requiring independent verification</h3><ul>'+li(a.verification)+'</ul>':'')+
+'<h2 id="s8">CSS/PMS exam questions with model answers</h2>'+
+(a.ex.length?a.ex.map(function(e,i){return '<div class="qa"><b>Question '+(i+1)+':</b> '+esc(e[0])+'<p><b>Model answer:</b> '+esc(e[1])+'</p></div>'}).join(""):'<p>Model answers are not available in this older analysis.</p>')+
+'<h2 id="s9">Model essay introduction</h2><p>'+esc(a.intro||"A model introduction is not available in this older analysis.")+'</p>'+
+'<h2 id="s10">Essay outline</h2>'+
+(a.essayTitle?'<h3>'+esc(a.essayTitle)+'</h3>':'')+
+(a.essayThesis?'<p><b>Thesis:</b> '+esc(a.essayThesis)+'</p>':'')+
+(a.essay.length?a.essay.map(function(h,i){return '<h3>'+esc(/^\d+\./.test(h.heading)?h.heading:(i+1)+'. '+h.heading)+'</h3>'+(h.subheadings.length?'<ol type="i">'+h.subheadings.map(function(sub){return '<li>'+esc(String(sub).replace(/^[ivxlcdm]+\.\s*/i,""))+'</li>'}).join("")+'</ol>':'')}).join("")+(a.essay.every(function(h){return !h.subheadings.length})?'<p><i>Detailed subheadings are not available in this older analysis.</i></p>':''):'<p>Structured essay outline is not available in this older analysis.</p>')+
+'<h2 id="s11">Test your understanding: five MCQs</h2>'+quiz+
+'<h2 id="s12">My notes</h2><textarea id="nt" data-k="'+k+'" placeholder="Write your own notes here (saved on this device)">'+esc(ST.notes[k]||"")+'</textarea>'+
+(a.u?'<p><a href="'+esc(a.u)+'" target="_blank" rel="noopener">Read the complete article on the newspaper site ?</a></p>':"")+'</div>';
+}
+
+function reader(a){
+var k=id(a);
+return '<div class="rd" id="rd"><div class="pg"><i id="pgi"></i></div><div class="tb"><button data-a="close">Back</button><button data-a="fs" data-k="-1">A-</button><button data-a="fs" data-k="1">A+</button><button data-a="th">Theme</button><button data-a="save" data-k="'+k+'">'+(ST.saved[k]?"Saved":"Save")+'</button><button data-a="stat" data-k="'+k+'">'+(ST.status[k]||"Unread")+'</button><button data-a="dl" data-k="'+k+'">Download notes</button><button data-a="print">Print</button></div><div class="rw"><div class="toc"><a href="#s1">Thesis</a><a href="#s2">Precis</a><a href="#s3">Argument</a><a href="#s4">Context</a><a href="#s5">Analysis</a><a href="#s6">Terms</a><a href="#s7">Facts</a><a href="#s8">Exam answers</a><a href="#s9">Introduction</a><a href="#s10">Essay outline</a><a href="#s11">MCQ test</a><a href="#s12">My notes</a></div>'+body(a)+'</div></div>';
+}function find(k){return all().filter(function(a){return id(a)===k})[0]}
+function render(){var h='<div class="top"><div class="in"><h1> CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' | Study notes from newspapers in Pakistan</p><div class="bar"><input id="q" placeholder="Search articles, topics, facts..." value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb" data-a="th">Theme</button></div></div></div><div class="main">'
 +(S.v==="sources"?sources():home())+'</div>'+(S.o?reader(S.o):"");
-var q=$("q"),had=document.activeElement===q;$("app").innerHTML=h;if(had){q=$("q");q.focus();q.setSelectionRange(q.value.length,q.value.length)}
+var q=$("q");
+var had=document.activeElement===q;
+var cursor=had?q.selectionStart:0;
+
+$("app").innerHTML=h;
+
+if(had){
+ q=$("q");
+ q.focus();
+ q.setSelectionRange(cursor,cursor);
+}
 theme();if(S.o){var r=$("rd");r.style.fontSize=ST.fs+"px";var art=r.querySelector(".art");art.style.fontSize=ST.fs+"px";r.onscroll=function(){var m=r.scrollHeight-r.clientHeight;$("pgi").style.width=(m>0?r.scrollTop/m*100:0)+"%"}}}
-function txt(a){var k=id(a);return a.p+": "+a.t+"\n"+(a.u||"")+"\n\nTHESIS\n"+a.thesis+"\n\nPRECIS\n"+a.precis+"\n\nARGUMENT\n"+a.struct.join("\n")+"\n\nCONTEXT\n"+a.ctx.join("\n")+"\n\nANALYSIS\n"+a.an.map(function(g){return g[0]+"\n"+g[1].join("\n")}).join("\n\n")+"\n\nTERMS\n"+a.terms.join("\n")+"\n\nFACTS\n"+a.facts.join("\n")+"\n\nQUESTIONS\n"+a.ex.map(function(e){return e[0]+"\n"+e[1]}).join("\n\n")+"\n\nINTRO\n"+a.intro+"\n\nCONCLUSION\n"+a.concl+"\n\nESSAY OUTLINE\n"+a.essay+"\n\nMY NOTES\n"+(ST.notes[k]||"")}
+function txt(a){
+ var k=id(a),out=[];
+ function add(title,items){
+  out.push("\n\n"+title.toUpperCase());
+  if(items&&items.length)items.forEach(function(x){out.push(typeof x==="string"?x:String(x))});
+  else out.push("Not available.");
+ }
+ out.push(a.p+": "+a.t,a.u||"");
+ add("Central thesis",[a.thesis]);
+ add("Precis",[a.precis]);
+ add("Main arguments",a.struct);
+ add("Context",a.ctx);
+ (a.an||[]).forEach(function(g){add(g[0],g[1])});
+ add("Important terminology",a.terms);
+ add("Facts to memorise",a.facts);
+ add("Claims requiring verification",a.verification);
+ out.push("\n\nCSS/PMS EXAM QUESTIONS AND MODEL ANSWERS");
+ if(a.ex&&a.ex.length)a.ex.forEach(function(e,i){
+  out.push("\n"+(i+1)+". "+e[0]+"\nModel answer: "+e[1]);
+ });
+ else out.push("Not available.");
+ out.push("\n\nMODEL ESSAY INTRODUCTION\n"+(a.intro||"Not available."));
+ out.push("\n\nESSAY OUTLINE");
+ if(a.essayTitle)out.push("Title: "+a.essayTitle);
+ if(a.essayThesis)out.push("Thesis: "+a.essayThesis);
+ if(a.essay&&a.essay.length)a.essay.forEach(function(h,i){
+  out.push("\n"+(h.heading||((i+1)+". Untitled heading")));
+  (h.subheadings||[]).forEach(function(sub,j){
+   out.push(["i","ii","iii","iv","v","vi","vii","viii","ix","x"][j]||String(j+1)+". "+sub);
+   if(j<10)out[out.length-1]+=". "+sub;
+  });
+ });
+ else out.push("Not available.");
+ out.push("\n\nFIVE MCQs");
+ if(a.mcqs&&a.mcqs.length)a.mcqs.forEach(function(q,i){
+  out.push("\nQ"+(i+1)+". "+q.question);
+  (q.options||[]).forEach(function(op,j){out.push(String.fromCharCode(65+j)+". "+op)});
+  out.push("Correct answer: "+(q.options&&q.options[q.correct_option]||"Not available"));
+  out.push("Explanation: "+(q.explanation||""));
+ });
+ else out.push("Not available.");
+ out.push("\n\nMY NOTES\n"+(ST.notes[k]||""));
+ return out.join("\n");
+}
 function plain(h){var d=document.createElement("div");d.innerHTML=h;return d.textContent}
-document.addEventListener("click",function(e){var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a,k=b.dataset.k;
+document.addEventListener("click",function(e){
+var b=e.target.closest("[data-a]");
+if(!b)return;
+var a=b.dataset.a,k=b.dataset.k;
+
+if(a==="mcq-submit"){
+ var article=find(k);
+ if(!article)return;
+ var answers=ST.mcqAnswers[k]||{};
+ if(!article.mcqs.length||article.mcqs.some(function(q,i){
+  return answers[i]===undefined;
+ })){
+  var msg=$("quiz-msg");
+  if(msg)msg.textContent="Please answer all five questions before submitting.";
+  return;
+ }
+ ST.mcqSubmitted[k]=true;
+ sv();
+ var sc=$("rd")?$("rd").scrollTop:0;
+ render();
+ if($("rd"))$("rd").scrollTop=sc;
+ return;
+}
+
+if(a==="mcq-retry"){
+ ST.mcqAnswers[k]={};
+ ST.mcqSubmitted[k]=false;
+ sv();
+ var sc=$("rd")?$("rd").scrollTop:0;
+ render();
+ if($("rd"))$("rd").scrollTop=sc;
+ return;
+}
 if(a==="v"){S.v=k;S.o=null}else if(a==="paper")S.p=k;else if(a==="subj")S.s=k;
 else if(a==="save"){ST.saved[k]=!ST.saved[k];sv()}
 else if(a==="open"){S.o=find(k);if(S.o&&ST.status[k]!=="Revised"&&!ST.status[k]){ST.status[k]="Reading";sv()}}
@@ -206,17 +398,221 @@ else if(a==="th"){var T=["auto","dark","sepia","light"];ST.theme=T[(T.indexOf(ST
 else if(a==="stat"){var c=["Unread","Reading","Revised"];ST.status[k]=c[(c.indexOf(ST.status[k]||"Unread")+1)%3];sv()}
 else if(a==="print"){window.print();return}
 else if(a==="dl"){var x=find(k),data=txt(x);var bl=new Blob([data],{type:"text/plain"}),u=URL.createObjectURL(bl),l=document.createElement("a");l.href=u;l.download=x.t.replace(/\W+/g,"_")+".txt";l.click();return}
-else if(a==="gen"){gen();return}else if(a==="copy"){var ta=$("pt");ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}if(!ok&&navigator.clipboard)navigator.clipboard.writeText(ta.value);b.textContent="Copied ✓";return}
+else if(a==="gen"){gen();return}else if(a==="copy"){var ta=$("pt");ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}if(!ok&&navigator.clipboard)navigator.clipboard.writeText(ta.value);b.textContent="Copied OK";return}
 var sc=S.o&&$("rd")?$("rd").scrollTop:0;render();if(S.o&&$("rd"))$("rd").scrollTop=sc});
-document.addEventListener("input",function(e){if(e.target.id==="q"){S.q=e.target.value;render()}else if(e.target.id==="nt"){ST.notes[e.target.dataset.k]=e.target.value;sv()}});
-function gen(){var x=$("mx").value.trim();if(x.length<400){S.msg="Please paste at least a few paragraphs.";$("gs").textContent=S.msg;return}
-if(!(window.claude&&claude.use)){$("gs").textContent="Not available in this view.";return}
-$("gs").textContent="Reading the article…";
-claude.use("sample").then(function(sm){if(!sm){$("gs").textContent="Generation is not available in this view.";return}
-var t=$("mt").value||"Pasted article",p=$("mp").value||"My analysis";
-var pr="You are a CSS/PMS exam tutor in Pakistan. Analyse the article below and return ONLY JSON with keys: thesis (string), precis (string, 80-120 words, own words), struct (array of strings), ctx (array of strings), an (array of [heading, array of strings] pairs covering causes, stakeholders, implications, policy options), terms (array of 'word – meaning'), facts (array of strings taken from the article), ex (array of [question, answer outline] pairs, 3 items), intro (string), concl (string), essay (string), tag (string like 'Governance · Economy'). Do not quote more than 10 consecutive words from the article. Article:\n\n"+x.slice(0,14000);
-return sm.json(pr).then(function(r){["struct","ctx","an","terms","facts","ex"].forEach(function(f){if(!Array.isArray(r[f]))r[f]=[]});["thesis","precis","intro","concl","essay"].forEach(function(f){if(typeof r[f]!=="string")r[f]=""});r.t=t;r.p=p;r.d="Added "+new Date().toLocaleDateString("en-GB");r.u="";if(!r.tag)r.tag="General";ST.mine.push(r);sv();S.v="today";S.o=r;render()})}).catch(function(err){$("gs").textContent="Could not generate notes ("+(err&&err.code||"error")+"). Try again later."})}
+document.addEventListener("change",function(e){
+ if(e.target.matches("input[data-quiz]")){
+  var k=e.target.dataset.quiz,i=Number(e.target.dataset.index);
+  if(!ST.mcqAnswers[k])ST.mcqAnswers[k]={};
+  if(!ST.mcqSubmitted[k]){
+   ST.mcqAnswers[k][i]=Number(e.target.value);
+   sv();
+  }
+ }
+});
+document.addEventListener("input",function(e){
+ if(e.target.id==="q"){S.q=e.target.value;render()}
+ else if(e.target.id==="nt"){ST.notes[e.target.dataset.k]=e.target.value;sv()}
+});
+function gen(){
+ var x=$("mx").value.trim();
+ if(x.length<400){
+  S.msg="Please paste at least a few paragraphs.";
+  $("gs").textContent=S.msg;
+  return;
+ }
+ if(!(window.claude&&claude.use)){
+  $("gs").textContent="Not available in this view.";
+  return;
+ }
+ $("gs").textContent="Analysing the article...";
+ claude.use("sample").then(function(sm){
+  if(!sm){
+   $("gs").textContent="Generation is not available in this view.";
+   return;
+  }
+
+  var t=$("mt").value||"Pasted article";
+  var p=$("mp").value||"My analysis";
+
+  var pr=`You are a senior CSS/PMS instructor and analytical research specialist in Pakistan.
+
+Analyse the supplied article and return ONLY valid JSON using exactly this schema:
+
+{
+ "executive_summary":"",
+ "central_thesis":"",
+ "precis":"",
+ "argument_structure":{
+  "main_arguments":[],
+  "supporting_arguments":[],
+  "counterarguments":[],
+  "underlying_assumptions":[]
+ },
+ "critical_analysis":{
+  "strengths":[],
+  "weaknesses":[],
+  "critical_observations":[],
+  "balanced_assessment":""
+ },
+ "important_terminology":[
+  {"term":"","definition":"","usage_example":""}
+ ],
+ "pakistan_relevance":{
+  "connections":[],
+  "challenges":[],
+  "policy_recommendations":[]
+ },
+ "international_context":[],
+ "css_pms_subjects":[],
+ "facts_to_memorise":[
+  {"category":"Statistic","content":"","attribution":"","context":""}
+ ],
+ "facts_requiring_verification":[
+  {"claim":"","claim_type":"Statistical","why_verification_is_needed":"","recommended_source":""}
+ ],
+ "possible_exam_questions":[
+  {"question":"","type":"Analytical","model_answer":""}
+ ],
+ "model_introduction":"",
+ "essay_outline":{
+  "title":"",
+  "thesis_statement":"",
+  "main_headings":[
+   {"heading":"","subheadings":[]}
+  ],
+  "conclusion":""
+ },
+ "mcqs":[
+  {"question":"","options":["A","B","C","D"],"correct_option":0,"explanation":""}
+ ],
+ "revision_points":[],
+ "difficulty":"Intermediate",
+ "relevance_score":8
+}
+
+QUALITY RULES:
+
+1. Explain the author's thesis, arguments, evidence, assumptions and reasoning. Distinguish the author's claims from your own critical evaluation.
+2. Provide meaningful strengths, weaknesses, counterarguments and a balanced assessment. Avoid generic repetition.
+3. Include at least five useful terminology entries and realistic Pakistan-specific recommendations.
+4. FACTS TO MEMORISE: extract all significant statistics, dates, years, names, institutions, reports, events, constitutional references and concrete evidence actually present in the article. Include brief quotations or sayings only where present; preserve exact wording and attribution. Do not invent, estimate or alter any fact, quotation or attribution. Keep quotations short (no more than 10 consecutive words). Clearly attribute allegations and reported claims. If no relevant facts exist, return an empty array.
+5. Keep claims requiring independent verification separate from facts to memorise. Do not present unverified claims as established facts.
+6. Generate exactly five CSS/PMS-level exam questions. Each must have a substantive model answer of approximately four to five sentences, directly addressing the question.
+7. Write exactly one model essay introduction of approximately 100 words. Include context, issue, thesis and direction of argument. Do not put a conclusion in this field.
+8. Create a developed essay outline. Main headings must be numbered 1, 2, 3 and so on. Subheadings must use Roman numerals i, ii, iii and so on. Include relevant background, analysis, Pakistan implications, counterarguments, recommendations and a concluding heading.
+9. Generate exactly five article-specific MCQs, each with exactly four distinct options and exactly one correct answer. correct_option must be a zero-based integer (0?3). Include a concise explanation. Do not create ambiguous questions.
+10. Never invent legal provisions, statistics, sources, quotations or examples. Label analytical inference clearly.
+11. Return valid JSON only.
+
+ARTICLE:
+${x.slice(0,14000)}`;
+
+  return sm.json(pr).then(function(z){
+   z=z||{};
+   var ar=z.argument_structure||{},ca=z.critical_analysis||{},pk=z.pakistan_relevance||{},es=z.essay_outline||{};
+
+   function arr(v){return Array.isArray(v)?v:[]}
+   function group(title,items){return items.length?[title,items]:null}
+
+   var r={
+    p:p,
+    t:t,
+    d:"Added "+new Date().toLocaleDateString("en-GB"),
+    u:"",
+    tag:arr(z.css_pms_subjects).join(" | ")||"General",
+    thesis:z.central_thesis||"",
+    precis:z.precis||z.executive_summary||"",
+    struct:arr(ar.main_arguments),
+    ctx:arr(pk.connections).concat(arr(pk.challenges),arr(z.international_context)),
+    an:[
+     group("Supporting arguments",arr(ar.supporting_arguments)),
+     group("Counterarguments",arr(ar.counterarguments)),
+     group("Underlying assumptions",arr(ar.underlying_assumptions)),
+     group("Strengths",arr(ca.strengths)),
+     group("Weaknesses",arr(ca.weaknesses)),
+     group("Critical observations",arr(ca.critical_observations)),
+     group("Balanced assessment",ca.balanced_assessment?[ca.balanced_assessment]:[]),
+     group("Policy recommendations",arr(pk.policy_recommendations)),
+     group("Revision points",arr(z.revision_points))
+    ].filter(Boolean),
+    terms:arr(z.important_terminology).map(function(v){
+     return typeof v==="string"?v:(v.term||"")+" | "+(v.definition||"")+(v.usage_example?" Example: "+v.usage_example:"");
+    }),
+    facts:arr(z.facts_to_memorise).map(function(f){
+     if(typeof f==="string")return f;
+     return [f.category||"Fact",f.content||"",f.attribution?"Attribution: "+f.attribution:"",f.context?"Context: "+f.context:""].filter(Boolean).join(" | ");
+    }),
+    verification:arr(z.facts_requiring_verification).map(function(f){
+     if(typeof f==="string")return f;
+     return [f.claim||"", "Type: "+(f.claim_type||"Not specified"),"Reason: "+(f.why_verification_is_needed||""),"Source: "+(f.recommended_source||"")].join(" | ");
+    }),
+    ex:arr(z.possible_exam_questions).map(function(q){
+     return [q.question||"",q.model_answer||"Model answer unavailable.",q.type||"Analytical"];
+    }),
+    intro:z.model_introduction||"",
+    essayTitle:es.title||"",
+    essayThesis:es.thesis_statement||"",
+    essay:arr(es.main_headings).map(function(h,i){
+     if(typeof h==="string")return {heading:/^\d+\./.test(h)?h:(i+1)+". "+h,subheadings:[]};
+     return {heading:h.heading||((i+1)+". Untitled heading"),subheadings:arr(h.subheadings)};
+    }),
+
+
+    mcqs: arr(z.mcqs).slice(0,5).map(function(q){
+      return {
+        question: q.question || "",
+        options: arr(q.options).slice(0,4),
+        correct_option:
+          Number.isInteger(q.correct_option) &&
+          q.correct_option >= 0 &&
+          q.correct_option <= 3
+            ? q.correct_option
+            : -1,
+        explanation: q.explanation || ""
+      };
+    })
+   };
+
+   // Validate all five MCQs before saving the article
+   if (r.mcqs.length !== 5 || r.mcqs.some(function(q){
+     return q.options.length !== 4 ||
+            q.correct_option < 0 ||
+            q.correct_option > 3 ||
+            new Set(q.options).size !== 4;
+   })) {
+     $("gs").textContent = "Invalid MCQ data. Please generate again.";
+     return;
+   }
+
+   // Save the completed article
+   ST.mine.push(r);
+   sv();
+   S.v = "today";
+   S.o = r;
+   render();
+  });
+ }).catch(function(err){
+  console.error("Generation error:",err);
+  $("gs").textContent =
+    "Could not generate notes (" +
+    (err && err.code || "error") +
+    "). Try again later.";
+ });
+}
+
 render();
-}).catch(function(e){document.getElementById("app").innerHTML="<p style='padding:20px'>Could not load data/articles.json</p>"});
+
+}).catch(function(e){
+ console.error("Article loading error:",e);
+
+ document.getElementById("app").innerHTML=
+ '<div style="padding:25px;font-family:Arial">'+
+ '<h2>Unable to load articles</h2>'+
+ '<p>Check that data/articles.json exists and contains valid JSON.</p>'+
+ '<p>Run this website through a local web server rather than opening the HTML file directly.</p>'+
+ '<p>Error: '+String(e.message||e)+'</p>'+
+ '</div>';
+});
 </script>
 </body></html>
