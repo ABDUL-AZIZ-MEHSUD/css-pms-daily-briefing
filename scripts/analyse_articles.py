@@ -21,7 +21,7 @@ INBOX_FILE = ROOT / "data" / "articles-inbox.json"
 OUTPUT_FILE = ROOT / "data" / "articles.json"
 
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-MAX_ANALYSES = int(os.getenv("MAX_ANALYSES", "1"))
+MAX_ANALYSES = int(os.getenv("MAX_ANALYSES", "6"))
 
 MINIMUM_TEXT_LENGTH = 800
 

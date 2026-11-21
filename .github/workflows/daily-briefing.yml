@@ -34,7 +34,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: gpt-4o-mini
-          MAX_ANALYSES: "1"
+          MAX_ANALYSES: "6"
         run: |
           python scripts/update.py
 
