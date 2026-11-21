@@ -3,8 +3,8 @@ name: CSS PMS Daily Briefing
 
 on:
   schedule:
-    # Every day at 07:00 Pakistan Standard Time (UTC+5)
-    - cron: "0 2 * * *"
+    # Every day at 07:17 Pakistan Standard Time (UTC+5)
+    - cron: "17 2 * * *"
 
   workflow_dispatch:
 
