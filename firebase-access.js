@@ -1110,6 +1110,10 @@
      STUDENT ACCESS CONTROL
   ========================= */
 
+  window.dashboardSignOut = function () {
+    return auth.signOut();
+  };
+
   window.loadArticlesFromFirestore = function () {
     return new Promise(function (resolve, reject) {
       var studentSubscription = null;

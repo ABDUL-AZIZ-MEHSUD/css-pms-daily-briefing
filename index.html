@@ -426,7 +426,7 @@ function reader(a){
 var k=id(a);
 return '<div class="rd" id="rd"><div class="pg"><i id="pgi"></i></div><div class="tb"><button data-a="close">Back</button><button data-a="fs" data-k="-1">A-</button><button data-a="fs" data-k="1">A+</button><button data-a="th">Theme</button><button data-a="save" data-k="'+k+'">'+(ST.saved[k]?"Saved":"Save")+'</button><button data-a="stat" data-k="'+k+'">'+(ST.status[k]||"Unread")+'</button><button data-a="dl" data-k="'+k+'">Download notes</button><button data-a="print">Print</button></div><div class="rw"><div class="toc"><a href="#s1">Thesis</a><a href="#s2">Precis</a><a href="#s3">Argument</a><a href="#s4">Context</a><a href="#s5">Analysis</a><a href="#s6">Terms</a><a href="#s7">Facts</a><a href="#s8">Exam answers</a><a href="#s9">Introduction</a><a href="#s10">Essay outline</a><a href="#s11">MCQ test</a><a href="#s12">My notes</a></div>'+body(a)+'</div></div>';
 }function find(k){return all().filter(function(a){return id(a)===k})[0]}
-function render(){var h='<div class="top"><div class="in"><h1> CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' | Study notes from newspapers in Pakistan</p>'+subscriptionReminder()+'<div class="bar"><input id="q" placeholder="Search articles, topics, facts..." value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb" data-a="th">Theme</button></div></div></div><div class="main">'
+function render(){var h='<div class="top"><div class="in"><h1> CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' | Study notes from newspapers in Pakistan</p>'+subscriptionReminder()+'<div class="bar"><input id="q" placeholder="Search articles, topics, facts..." value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb" data-a="th">Theme</button><button class="nb signout-btn" data-a="signout">Sign out</button></div></div></div><div class="main">'
 +(S.v==="sources"?sources():home())+'</div>'+(S.o?reader(S.o):"");
 var q=$("q");
 var had=document.activeElement===q;
@@ -489,6 +489,17 @@ document.addEventListener("click",function(e){
 var b=e.target.closest("[data-a]");
 if(!b)return;
 var a=b.dataset.a,k=b.dataset.k;
+
+if(a==="signout"){
+ if(typeof window.dashboardSignOut!=="function"){
+  alert("Sign out is unavailable. Please refresh and try again.");
+  return;
+ }
+ window.dashboardSignOut().catch(function(err){
+  alert("Sign out failed: "+(err.message||err));
+ });
+ return;
+}
 
 if(a==="mcq-submit"){
  var article=find(k);
