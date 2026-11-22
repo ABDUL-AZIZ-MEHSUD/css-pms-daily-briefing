@@ -1,8 +1,47 @@
 {
-  "last_updated": "2026-11-21T04:37:51.368262+00:00",
-  "total_articles": 18,
-  "new_articles_today": 6,
+  "last_updated": "2026-11-22T13:17:55.697553+00:00",
+  "total_articles": 21,
+  "new_articles_today": 3,
   "articles": [
+    {
+      "id": "8fa55214cc488941",
+      "title": "Healthcare in limbo",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2641562/healthcare-in-limbo",
+      "published": "2026-11-21T14:44:53+00:00",
+      "author": "editorial",
+      "rss_summary": "Sindh HealthCare Commission has been functioning without a chairman for 18 months, its board's tenure has also expired",
+      "collection_status": "collected",
+      "analysis_status": "pending",
+      "collected_at": "2026-11-22T13:17:55.695656+00:00"
+    },
+    {
+      "id": "a88bcd912e1913b6",
+      "title": "India's overseas hit squads",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2641561/indias-overseas-hit-squads",
+      "published": "2026-11-21T14:44:53+00:00",
+      "author": "editorial",
+      "rss_summary": "European Parliament report links Indian agencies to targeted killings, cyber-attacks, harassment of critics",
+      "collection_status": "collected",
+      "analysis_status": "pending",
+      "collected_at": "2026-11-22T13:17:55.695763+00:00"
+    },
+    {
+      "id": "2c0e0866ec5771f8",
+      "title": "Climate diplomacy in retreat",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2641560/climate-diplomacy-in-retreat",
+      "published": "2026-11-21T14:44:53+00:00",
+      "author": "editorial",
+      "rss_summary": "COP31 in Antalya has exposed how readily political and commercial interests can undermine climate commitments",
+      "collection_status": "collected",
+      "analysis_status": "pending",
+      "collected_at": "2026-11-22T13:17:55.695848+00:00"
+    },
     {
       "id": "c14f3462283d4be9",
       "title": "Theatre control",
@@ -41,8 +80,9 @@
       "author": "none@none.com (Editorial)",
       "rss_summary": "NEARLY a decade after the world watched Myanmar’s junta conduct a brutal campaign of extermination and displacement against the Muslim Rohingya minority, the International Court of Justice has ruled that the regime is guilty of genocide. It took a small African state — The Gambia — to lodge a case at the ICJ against Myanmar. Today, because of The Gambia’s courage and moral clarity, this verdict has made history as it is the first time a state has been held guilty of genocide. While calling out a blood-soaked campaign for what it was, the ruling also sets a legal precedent for building a strong case against another genocidal state: Israel. To recall, in 2017 the Myanmar military unleashed massive violence against the Rohingya in Rakhine state, with thousands killed, including over 2,000 children under five, rampant sexual attacks, while hundreds of thousands of Rohingya were forced to flee. The Rohingya have long faced discrimination, with the regime denying most citizenship. The junta claims it had conducted ‘counterinsurgency operations’, a defence rejected by the ICJ. Though the ruling grants the Rohingya a moral victory, it is difficult to see the community returning to their ho",
       "collection_status": "collected",
-      "analysis_status": "pending",
-      "collected_at": "2026-11-21T04:37:50.910209+00:00"
+      "analysis_status": "fetch_error",
+      "collected_at": "2026-11-21T04:37:50.910209+00:00",
+      "analysis_message": "403 Client Error: Forbidden for url: https://www.dawn.com/news/2046081/rohingya-genocide"
     },
     {
       "id": "9ed8e2f8be41e9e0",
@@ -67,8 +107,9 @@
       "author": "none@none.com (Editorial)",
       "rss_summary": "WAS it damage control by the president, or a genuine effort to mend fences before a spiralling dispute caused lasting damage? With questions being raised on where the senior leaders of the PPP and PML-N stand in the debate over new provinces, the president, prime minister and interior minister met on Thursday. Their huddle appears to have gone well. The Press Information Department soon released a picture of the three, all smiles. A brief readout from the Presidency stated that they had reviewed the political situation and agreed to resolve all outstanding issues through dialogue. This more measured approach contrasted sharply with the escalating rhetoric from the pro- and anti-new-provinces camps within the ruling coalition. Consecutive, no-holds-barred speeches from PPP Chairman Bilawal Bhutto-Zardari had dominated headlines for most of the outgoing week, raising speculation about an impending showdown. But it appears that there will be no showdown, at least for now. President Asif Ali Zardari will likely attempt to reason with the PM and the interior minister. The more restrained approach from the president should not be taken to mean that the PPP’s stance on administrative rest",
       "collection_status": "collected",
-      "analysis_status": "pending",
-      "collected_at": "2026-11-21T04:37:50.911446+00:00"
+      "analysis_status": "fetch_error",
+      "collected_at": "2026-11-21T04:37:50.911446+00:00",
+      "analysis_message": "403 Client Error: Forbidden for url: https://www.dawn.com/news/2046082/reining-it-in"
     },
     {
       "id": "0acb3474ff970913",
