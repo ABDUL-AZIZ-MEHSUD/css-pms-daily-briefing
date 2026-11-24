@@ -373,7 +373,7 @@ FACTS TO MEMORISE
 
 EXAM QUESTIONS
 - Generate five relevant CSS/PMS-level questions.
-- Each model answer must contain strictly 45?60 words and 3?4 sentences.
+- Each model answer must contain 45 to 60 words inclusive. Aim for 52 to 55 words per answer to provide a safe margin, and exactly 3 or 4 complete sentences.
 - Keep answers concise, direct, analytical and easy to revise; include only the strongest relevant arguments and article-based evidence.
 - Answers must directly address the question, demonstrate analysis and use article-based evidence where available.
 - Avoid generic answers and unsupported claims.
@@ -432,38 +432,139 @@ VERIFICATION AND QUALITY CONTROL
     # Validate all five CSS/PMS model answers.
     import re
 
-    questions = result.get("possible_exam_questions", [])
+    for attempt in range(2):
+        questions = result.get("possible_exam_questions", [])
 
-    if len(questions) != 5:
-        raise ValueError(
-            f"Expected exactly 5 exam questions, found {len(questions)}."
-        )
-
-    errors = []
-
-    for i, question in enumerate(questions, 1):
-        answer = question.get("model_answer", "").strip()
-        word_count = len(answer.split())
-        sentence_count = len(
-            re.findall(r"[^.!?]+(?:[.!?]+|$)", answer)
-        )
-
-        if not 45 <= word_count <= 60:
-            errors.append(
-                f"Answer {i}: {word_count} words (required: 45?60)"
+        if len(questions) != 5:
+            raise ValueError(
+                f"Expected exactly 5 exam questions, found {len(questions)}."
             )
 
-        if not 3 <= sentence_count <= 4:
-            errors.append(
-                f"Answer {i}: {sentence_count} sentences (required: 3?4)"
+        errors = []
+        invalid_answers = []
+
+        for i, question in enumerate(questions, 1):
+            answer = question.get("model_answer", "").strip()
+            word_count = len(answer.split())
+            sentence_count = len(
+                re.findall(r"[^.!?]+(?:[.!?]+|$)", answer)
             )
 
-    if errors:
-        raise ValueError(
-            "Model-answer validation failed:\n" + "\n".join(errors)
+            problems = []
+
+            if not 45 <= word_count <= 60:
+                problems.append(
+                    f"{word_count} words; required 45 to 60"
+                )
+
+            if not 3 <= sentence_count <= 4:
+                problems.append(
+                    f"{sentence_count} sentences; required 3 or 4"
+                )
+
+            if problems:
+                errors.extend(
+                    [f"Answer {i}: {problem}" for problem in problems]
+                )
+                invalid_answers.append({
+                    "question_number": i,
+                    "question": question.get("question", ""),
+                    "current_answer": answer,
+                    "problems": problems
+                })
+
+        if not errors:
+            print(
+                "PASS: All five model answers meet the "
+                "45 to 60 word and 3 or 4 sentence standard."
+            )
+            break
+
+        if attempt == 1:
+            raise ValueError(
+                "Model-answer validation failed after correction attempt:\n"
+                + "\n".join(errors)
+            )
+
+        logging.warning(
+            "Model answers failed validation. Requesting correction."
         )
 
-    print("PASS: All five model answers meet the 45?60 word and 3?4 sentence standard.")
+        correction_prompt = (
+            "Correct ONLY the model answers supplied below. "
+            "Each corrected answer MUST contain 45 to 60 words inclusive. TARGET 52 TO 55 WORDS for every answer, not 45 or 46. Use exactly 3 or 4 complete sentences in every answer. Before returning each answer, count its words and sentences. If an answer has fewer than 52 words, expand it using relevant article-based evidence. If it exceeds 55 words, shorten it. "
+            "Answer the original question directly, retain relevant "
+            "article-based evidence, and avoid unsupported claims. "
+            "Use the original article context provided below. "
+            "Do not invent statistics, quotations, names, or facts. "
+            "Do not shorten the answers below 45 words. "
+            "Return valid JSON only, in this exact structure: "
+            '{"answers":[{"question_number":1,"model_answer":"..."}]}'
+            "\n\nARTICLE TITLE:\n"
+            + str(article.get("title", ""))
+            + "\n\nARTICLE SOURCE:\n"
+            + str(article.get("source", ""))
+            + "\n\nORIGINAL ARTICLE TEXT:\n"
+            + article_text[:25000]
+            + "\n\nANSWERS REQUIRING CORRECTION:\n"
+            + json.dumps(invalid_answers, ensure_ascii=False)
+        )
+
+        correction_response = client.responses.create(
+            model=MODEL,
+            input=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a precise CSS/PMS examination answer editor. "
+                        "Follow the requested word and sentence limits exactly."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": correction_prompt
+                }
+            ],
+            text={
+                "format": {
+                    "type": "json_object"
+                }
+            },
+            max_output_tokens=1800
+        )
+
+        correction_data = json.loads(correction_response.output_text)
+        corrected_answers = correction_data.get("answers", [])
+
+        if not isinstance(corrected_answers, list):
+            raise ValueError("Correction response did not contain an answers list.")
+
+        corrected_by_number = {}
+
+        for item in corrected_answers:
+            number = item.get("question_number")
+            answer = item.get("model_answer")
+
+            if isinstance(number, int) and isinstance(answer, str):
+                corrected_by_number[number] = answer.strip()
+
+        missing_numbers = [
+            item["question_number"]
+            for item in invalid_answers
+            if item["question_number"] not in corrected_by_number
+        ]
+
+        if missing_numbers:
+            raise ValueError(
+                "Correction response omitted answers for question(s): "
+                + ", ".join(map(str, missing_numbers))
+            )
+
+        for item in invalid_answers:
+            number = item["question_number"]
+            questions[number - 1]["model_answer"] = (
+                corrected_by_number[number]
+            )
 
     return result
 
