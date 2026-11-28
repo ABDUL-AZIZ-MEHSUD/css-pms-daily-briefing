@@ -754,6 +754,204 @@
   auth = firebase.auth();
   db = firebase.firestore();
 
+  /* =========================
+     STUDENT PROGRESS SYNC
+     Firestore remains behind this closure. Only an authenticated student
+     with a currently active subscription can read or write progress.
+  ========================= */
+
+  function activeStudentContext() {
+    var user = auth.currentUser;
+    if (!user || user.uid === ADMIN_UID) {
+      return Promise.reject(new Error("An active student session is required."));
+    }
+
+    return db.collection("users").doc(user.uid).get().then(function (doc) {
+      var profile = doc.exists ? (doc.data() || {}) : {};
+      var expiry = profile.subscriptionExpiry && profile.subscriptionExpiry.toDate
+        ? profile.subscriptionExpiry.toDate() : null;
+      if (profile.subscriptionStatus !== "active" || !expiry || expiry.getTime() <= Date.now()) {
+        var inactiveError = new Error("An active subscription is required to synchronise progress.");
+        inactiveError.code = "subscription-inactive";
+        throw inactiveError;
+      }
+      return { user: user, uid: user.uid };
+    });
+  }
+
+  function readStudentProgress(uid) {
+    var root = db.collection("users").doc(uid).collection("progress");
+    return Promise.all([
+      root.doc("dashboard").get(),
+      root.doc("study-centre").get()
+    ]).then(function (docs) {
+      return {
+        dashboard: docs[0].exists ? (docs[0].data() || {}) : { schemaVersion: 1, fields: {} },
+        studyCentre: docs[1].exists ? (docs[1].data() || {}) : { schemaVersion: 1, devices: {} }
+      };
+    });
+  }
+
+  function validDeviceSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") throw new Error("Invalid study progress.");
+    var deviceId = String(snapshot.deviceId || "");
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(deviceId)) throw new Error("Invalid device identifier.");
+    function count(value) {
+      value = Number(value);
+      return isFinite(value) && value >= 0 ? Math.min(Math.floor(value), 10000000) : 0;
+    }
+    function stringArray(value, max) {
+      if (!Array.isArray(value)) return [];
+      return value.slice(0, max).map(function (x) { return String(x).slice(0, 300); }).filter(Boolean);
+    }
+    return {
+      deviceId: deviceId,
+      platform: String(snapshot.platform || "web").slice(0, 20),
+      studySessions: count(snapshot.studySessions),
+      mcqAttempts: count(snapshot.mcqAttempts),
+      mcqCorrect: count(snapshot.mcqCorrect),
+      flashcardsReviewed: count(snapshot.flashcardsReviewed),
+      vocabularyReviewed: count(snapshot.vocabularyReviewed),
+      currentStreak: count(snapshot.currentStreak),
+      longestStreak: count(snapshot.longestStreak),
+      lastStudyDate: String(snapshot.lastStudyDate || "").slice(0, 10),
+      articlesStudied: stringArray(snapshot.articlesStudied, 2000),
+      activityDates: stringArray(snapshot.activityDates, 4000),
+      flashcardsReviewedKeys: stringArray(snapshot.flashcardsReviewedKeys, 4000),
+      vocabularyReviewedKeys: stringArray(snapshot.vocabularyReviewedKeys, 4000),
+      updatedAt: Number(snapshot.updatedAt) || Date.now()
+    };
+  }
+
+  window.CssPmsProgress = {
+    load: function () {
+      return activeStudentContext().then(function (ctx) {
+        return readStudentProgress(ctx.uid);
+      });
+    },
+
+    saveDashboardChanges: function (changes) {
+      if (!changes || typeof changes !== "object") return Promise.resolve(false);
+      return activeStudentContext().then(function (ctx) {
+        var ref = db.collection("users").doc(ctx.uid).collection("progress").doc("dashboard");
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (doc) {
+            var existing = doc.exists ? (doc.data() || {}) : {};
+            var fields = existing.fields || {};
+            var next = {};
+            Object.keys(fields).forEach(function (category) {
+              next[category] = Object.assign({}, fields[category] || {});
+            });
+
+            ["saved", "status", "notes", "mcqAnswers", "mcqSubmitted", "flashcardReviewed", "vocabularyReviewed"].forEach(function (category) {
+              var incoming = changes[category];
+              if (!incoming || typeof incoming !== "object") return;
+              if (!next[category]) next[category] = {};
+              Object.keys(incoming).slice(0, 1000).forEach(function (key) {
+                if (!key || key.length > 200) return;
+                var item = incoming[key];
+                if (!item || typeof item !== "object" || !Object.prototype.hasOwnProperty.call(item, "value")) return;
+                var stamp = Number(item.updatedAt) || Date.now();
+                var prior = next[category][key];
+                if (!prior || stamp >= (Number(prior.updatedAt) || 0)) {
+                  var value = item.value;
+                  if (category === "notes") value = String(value || "").slice(0, 12000);
+                  if (category === "status" && ["Unread", "Reading", "Revised"].indexOf(value) < 0) return;
+                  if (category === "saved" || category === "mcqSubmitted" || category === "flashcardReviewed" || category === "vocabularyReviewed") value = !!value;
+                  if (category === "mcqAnswers") {
+                    if (!value || typeof value !== "object" || Array.isArray(value)) return;
+                    var cleanAnswers = {};
+                    Object.keys(value).slice(0, 5).forEach(function (questionIndex) {
+                      var answer = Number(value[questionIndex]);
+                      if (/^[0-4]$/.test(questionIndex) && answer >= 0 && answer <= 3 && Math.floor(answer) === answer) {
+                        cleanAnswers[questionIndex] = answer;
+                      }
+                    });
+                    value = cleanAnswers;
+                  }
+                  next[category][key] = { value: value, updatedAt: stamp };
+                }
+              });
+            });
+
+            tx.set(ref, {
+              schemaVersion: 1,
+              fields: next,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          });
+        });
+      });
+    },
+
+    saveStudyDeviceProgress: function (snapshot) {
+      var clean;
+      try { clean = validDeviceSnapshot(snapshot); }
+      catch (e) { return Promise.reject(e); }
+      return activeStudentContext().then(function (ctx) {
+        if (!snapshot.ownerUid || String(snapshot.ownerUid) !== ctx.uid) {
+          throw new Error("The Android progress belongs to a different or unverified student session.");
+        }
+        var ref = db.collection("users").doc(ctx.uid).collection("progress").doc("study-centre");
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (doc) {
+            var data = doc.exists ? (doc.data() || {}) : {};
+            var devices = Object.assign({}, data.devices || {});
+            var prior = devices[clean.deviceId];
+            if (prior) {
+              var merged = Object.assign({}, prior, clean);
+              ["studySessions", "mcqAttempts", "mcqCorrect", "flashcardsReviewed", "vocabularyReviewed", "longestStreak"].forEach(function (field) {
+                merged[field] = Math.max(Number(prior[field]) || 0, Number(clean[field]) || 0);
+              });
+              merged.articlesStudied = Array.from(new Set((prior.articlesStudied || []).concat(clean.articlesStudied || []))).slice(0, 2000);
+              merged.activityDates = Array.from(new Set((prior.activityDates || []).concat(clean.activityDates || []))).slice(0, 4000);
+              merged.flashcardsReviewedKeys = Array.from(new Set((prior.flashcardsReviewedKeys || []).concat(clean.flashcardsReviewedKeys || []))).slice(0, 4000);
+              merged.vocabularyReviewedKeys = Array.from(new Set((prior.vocabularyReviewedKeys || []).concat(clean.vocabularyReviewedKeys || []))).slice(0, 4000);
+              merged.lastStudyDate = [String(prior.lastStudyDate || ""), String(clean.lastStudyDate || "")].sort().pop();
+              merged.currentStreak = clean.updatedAt >= (Number(prior.updatedAt) || 0)
+                ? clean.currentStreak : (Number(prior.currentStreak) || 0);
+              merged.updatedAt = Math.max(Number(prior.updatedAt) || 0, clean.updatedAt);
+              devices[clean.deviceId] = merged;
+            } else {
+              devices[clean.deviceId] = clean;
+            }
+            tx.set(ref, {
+              schemaVersion: 1,
+              devices: devices,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          });
+        });
+      });
+    },
+
+    uploadNativeProgress: function (snapshot) {
+      return window.CssPmsProgress.saveStudyDeviceProgress(snapshot).then(function () {
+        return window.CssPmsProgress.refreshNativeData();
+      });
+    },
+
+    refreshNativeData: function () {
+      return activeStudentContext().then(function (ctx) {
+        return readStudentProgress(ctx.uid).then(function (progress) {
+          if (typeof window.cssPmsUpdateStudyProgress === "function") {
+            window.cssPmsUpdateStudyProgress(progress.studyCentre || { devices: {} });
+          }
+          if (typeof window.cssPmsSendNativeStudyData === "function") {
+            window.cssPmsSendNativeStudyData(progress.studyCentre || { devices: {} });
+          }
+          return progress;
+        });
+      }).catch(function (err) {
+        if (err && err.code === "subscription-inactive") {
+          try { if (window.StudyNative) window.StudyNative.postMessage(JSON.stringify({ type: "subscriptionInactive" })); } catch (ignore) {}
+        }
+        console.warn("Study Centre authorisation/sync failed:", err);
+        throw err;
+      });
+    }
+  };
+
   function el(html) {
     document.getElementById("app").innerHTML = html;
   }
@@ -1111,6 +1309,8 @@
   ========================= */
 
   window.dashboardSignOut = function () {
+    try { localStorage.removeItem("cssdash_offline_cache"); } catch (e) {}
+    try { if (window.StudyNative) window.StudyNative.postMessage(JSON.stringify({ type: "subscriptionInactive" })); } catch (e) {}
     return auth.signOut();
   };
 
@@ -1119,6 +1319,9 @@
       var studentSubscription = null;
       auth.onAuthStateChanged(function (user) {
         if (!user) {
+          try {
+            if (window.StudyNative) window.StudyNative.postMessage(JSON.stringify({ type: "authenticationRequired" }));
+          } catch (nativeClearError) {}
           gate();
           return;
         }
@@ -1128,6 +1331,14 @@
         db.collection("users").doc(user.uid).get()
           .then(function (profileDoc) {
             if (isAdmin) {
+              try { localStorage.removeItem("cssdash_offline_cache"); } catch (cacheError) {}
+              try {
+                if (window.StudyNative) {
+                  window.StudyNative.postMessage(JSON.stringify({
+                    type:"subscriptionInactive"
+                  }));
+                }
+              } catch (nativeClearError) {}
               adminView(user);
               return null;
             }
@@ -1169,22 +1380,34 @@
               expiry && expiry.getTime() > Date.now();
 
             if (!active) {
+              try { localStorage.removeItem("cssdash_offline_cache"); } catch (cacheError) {}
+              try {
+                if (window.StudyNative) {
+                  window.StudyNative.postMessage(JSON.stringify({
+                    type:"subscriptionInactive"
+                  }));
+                }
+              } catch (nativeClearError) {}
               paymentView(user, profile);
               return null;
             }
 
-            return db.collection("articles").get();
-          })
-          .then(function (snapshot) {
-            if (!snapshot) return;
+            return db.collection("articles").get().then(function (snapshot) {
+              var articles = snapshot.docs.map(function (doc) {
+                var data = doc.data();
+                data.id = doc.id;
+                return data;
+              });
 
-            var articles = snapshot.docs.map(function (doc) {
-              var data = doc.data();
-              data.id = doc.id;
-              return data;
+              return readStudentProgress(user.uid).then(function (progress) {
+                resolve({
+                  articles: articles,
+                  subscription: studentSubscription,
+                  progress: progress,
+                  uid: user.uid
+                });
+              });
             });
-
-            resolve({articles:articles,subscription:studentSubscription});
           })
           .catch(function (err) {
             reject(err);

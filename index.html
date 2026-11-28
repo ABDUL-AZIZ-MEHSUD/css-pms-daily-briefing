@@ -213,8 +213,15 @@ body { background:var(--bg); color:var(--ink); }
 <script src="firebase-config.js"></script>
 <script src="firebase-access.js"></script>
 <script>
+if("serviceWorker" in navigator && location.protocol === "https:"){
+ navigator.serviceWorker.register("./service-worker.js").catch(function(e){console.warn("Offline shell cache unavailable:",e)});
+}
+</script>
+<script>
 loadArticlesFromFirestore().then(function(D){
 SUBSCRIPTION=D.subscription||null;
+var STUDENT_UID=D.uid||"";
+var CLOUD_PROGRESS=D.progress||{};
 var raw=Array.isArray(D)?D:(D.articles||[]);
 function arr(x){return Array.isArray(x)?x:[]}
 function group(title,items){return items.length?[title,items]:null}
@@ -224,6 +231,7 @@ A=raw.filter(function(r){
  var x=r.analysis,es=x.essay_outline||{},ar=x.argument_structure||{},ca=x.critical_analysis||{},pk=x.pakistan_relevance||{};
 
  return {
+ id:r.id||r.article_id||r.url||((r.source||"Unknown")+"|"+(r.title||"Untitled")),
  p:r.source||"Unknown",
  t:r.title||"Untitled",
  d:r.published||"",
@@ -248,6 +256,21 @@ A=raw.filter(function(r){
 
  terms:arr(x.important_terminology).map(function(t){
   return typeof t==="string"?t:(t.term||"")+" | "+(t.definition||"");
+ }),
+
+ studyTerms:arr(x.important_terminology).map(function(t){
+  if(typeof t==="string")return {term:t,definition:"",usage_example:""};
+  return {term:t.term||"",definition:t.definition||"",usage_example:t.usage_example||""};
+ }),
+
+ studyFacts:arr(x.facts_to_memorise).map(function(f){
+  if(typeof f==="string")return {category:"Fact",content:f,attribution:"",context:""};
+  return {
+   category:f.category||"Fact",
+   content:f.content||"",
+   attribution:f.attribution||"",
+   context:f.context||""
+  };
  }),
 
  facts:arr(x.facts_to_memorise).map(function(f){
@@ -308,9 +331,253 @@ mcqs: arr(x.mcqs||r.mcqs).slice(0,5).map(function(q){
 };
 });
 
-var ST={saved:{},status:{},notes:{},mcqAnswers:{},mcqSubmitted:{},mine:[],fs:18,theme:"auto"};
-try{var o=JSON.parse(localStorage.getItem("cssdash")||"{}");for(var k in o)ST[k]=o[k]}catch(e){}
-function sv(){try{localStorage.setItem("cssdash",JSON.stringify(ST))}catch(e){}}
+// Deliver authorised study material and the student's cloud progress to Android.
+// Only study notes, facts, terminology, MCQs and source links are included; no full article text.
+window.cssPmsSendNativeStudyData=function(studyProgress){
+ try{
+  if(window.StudyNative&&SUBSCRIPTION&&SUBSCRIPTION.status==="active"){
+   var nativeArticles=A.map(function(a){
+    return {
+     id:a.id,source:a.p,title:a.t,published:a.d,url:a.u,
+     thesis:a.thesis,precis:a.precis,
+     studyTerms:a.studyTerms||[],studyFacts:a.studyFacts||[],mcqs:a.mcqs||[]
+    };
+   });
+   window.StudyNative.postMessage(JSON.stringify({
+    type:"authorizedStudyData",uid:STUDENT_UID,subscription:SUBSCRIPTION,
+    articles:nativeArticles,studyProgress:studyProgress||{devices:{}}
+   }));
+  }
+ }catch(nativeSyncError){console.warn("Android study sync unavailable:",nativeSyncError);}
+};
+window.cssPmsSendNativeStudyData(CLOUD_PROGRESS.studyCentre||{devices:{}});
+
+var ST={saved:{},status:{},notes:{},mcqAnswers:{},mcqSubmitted:{},
+ flashcardReviewed:{},flashcardRevealed:{},vocabularyReviewed:{},
+ studyStats:null,mine:[],fs:18,theme:"auto",__progressMeta:{}};
+var DASHBOARD_STORAGE_KEY="cssdash_user_"+STUDENT_UID;
+try{
+ var storedOwner=localStorage.getItem("cssdash_owner_uid")||"";
+ var storedState=localStorage.getItem(DASHBOARD_STORAGE_KEY);
+ if(!storedState&&(!storedOwner||storedOwner===STUDENT_UID))storedState=localStorage.getItem("cssdash");
+ var o=JSON.parse(storedState||"{}");for(var k in o)ST[k]=o[k];
+}catch(e){}
+["saved","status","notes","mcqAnswers","mcqSubmitted","flashcardReviewed","flashcardRevealed","vocabularyReviewed","__progressMeta"].forEach(function(field){if(!ST[field]||typeof ST[field]!=="object"||Array.isArray(ST[field]))ST[field]={}});
+if(!Array.isArray(ST.mine))ST.mine=[];
+var PROGRESS_FIELDS=["saved","status","notes","mcqAnswers","mcqSubmitted","flashcardReviewed","vocabularyReviewed"];
+ST.__progressMeta=ST.__progressMeta||{};
+function mergeCloudDashboardProgress(){
+ var cloud=(CLOUD_PROGRESS.dashboard&&CLOUD_PROGRESS.dashboard.fields)||{};
+ PROGRESS_FIELDS.forEach(function(field){
+  var items=cloud[field]||{};ST[field]=ST[field]||{};ST.__progressMeta[field]=ST.__progressMeta[field]||{};
+  Object.keys(items).forEach(function(key){
+   var entry=items[key];if(!entry||!Object.prototype.hasOwnProperty.call(entry,"value"))return;
+   var cloudTime=Number(entry.updatedAt)||0;
+   var localTime=Number(ST.__progressMeta[field][key])||0;
+   if(!Object.prototype.hasOwnProperty.call(ST[field],key)||cloudTime>localTime){
+    ST[field][key]=entry.value;ST.__progressMeta[field][key]=cloudTime;
+   }
+  });
+ });
+}
+mergeCloudDashboardProgress();
+var legacyProgressChanges={};
+PROGRESS_FIELDS.forEach(function(field){
+ var local=ST[field]||{},cloud=((CLOUD_PROGRESS.dashboard&&CLOUD_PROGRESS.dashboard.fields)||{})[field]||{};
+ Object.keys(local).forEach(function(key){
+  var localStamp=Number((ST.__progressMeta[field]||{})[key])||0;
+  var cloudStamp=cloud[key]?(Number(cloud[key].updatedAt)||0):0;
+  if(!cloud[key]||localStamp>cloudStamp){
+   var stamp=localStamp||Date.now();ST.__progressMeta[field]=ST.__progressMeta[field]||{};ST.__progressMeta[field][key]=stamp;
+   legacyProgressChanges[field]=legacyProgressChanges[field]||{};legacyProgressChanges[field][key]={value:local[key],updatedAt:stamp};
+  }
+ });
+});
+function copyMap(o){return JSON.parse(JSON.stringify(o||{}))}
+var lastProgressState={};PROGRESS_FIELDS.forEach(function(f){lastProgressState[f]=copyMap(ST[f])});
+var pendingDashboardChanges={},dashboardSyncTimer=null,dashboardSyncInFlight=false,dashboardRetryDelay=2000;
+function mergePendingDashboardChanges(batch){
+ Object.keys(batch||{}).forEach(function(field){
+  pendingDashboardChanges[field]=pendingDashboardChanges[field]||{};
+  Object.keys(batch[field]||{}).forEach(function(key){
+   var incoming=batch[field][key],current=pendingDashboardChanges[field][key];
+   if(!current||(Number(incoming.updatedAt)||0)>=(Number(current.updatedAt)||0)){
+    pendingDashboardChanges[field][key]=incoming;
+   }
+  });
+ });
+}
+function scheduleDashboardSync(delay){
+ if(dashboardSyncTimer)clearTimeout(dashboardSyncTimer);
+ dashboardSyncTimer=setTimeout(flushDashboardSync,delay);
+}
+function flushDashboardSync(){
+ dashboardSyncTimer=null;
+ if(dashboardSyncInFlight)return;
+ if(!Object.keys(pendingDashboardChanges).length)return;
+ if(!window.CssPmsProgress||typeof window.CssPmsProgress.saveDashboardChanges!=="function"){
+  scheduleDashboardSync(5000);return;
+ }
+ var batch=pendingDashboardChanges;
+ pendingDashboardChanges={};
+ dashboardSyncInFlight=true;
+ Promise.resolve().then(function(){
+  return window.CssPmsProgress.saveDashboardChanges(batch);
+ }).then(function(){
+  dashboardRetryDelay=2000;
+ },function(e){
+  mergePendingDashboardChanges(batch);
+  dashboardRetryDelay=Math.min(dashboardRetryDelay*2,60000);
+  console.warn("Dashboard progress sync pending; will retry:",e);
+ }).then(function(){
+  dashboardSyncInFlight=false;
+  if(Object.keys(pendingDashboardChanges).length){
+   scheduleDashboardSync(dashboardRetryDelay);
+  }
+ });
+}
+function queueDashboardSync(changes){
+ mergePendingDashboardChanges(changes);
+ scheduleDashboardSync(700);
+}
+window.addEventListener("online",function(){
+ if(Object.keys(pendingDashboardChanges).length)scheduleDashboardSync(500);
+});
+document.addEventListener("visibilitychange",function(){
+ if(!document.hidden&&Object.keys(pendingDashboardChanges).length)scheduleDashboardSync(500);
+});
+if(Object.keys(legacyProgressChanges).length)queueDashboardSync(legacyProgressChanges);
+function sv(){
+ var changes={};
+ PROGRESS_FIELDS.forEach(function(field){
+  var before=lastProgressState[field]||{},after=ST[field]||{},keys={};
+  Object.keys(before).forEach(function(k){keys[k]=1});Object.keys(after).forEach(function(k){keys[k]=1});
+  Object.keys(keys).forEach(function(key){
+   if(JSON.stringify(before[key])!==JSON.stringify(after[key])){
+    var stamp=Date.now();ST.__progressMeta[field]=ST.__progressMeta[field]||{};ST.__progressMeta[field][key]=stamp;
+    changes[field]=changes[field]||{};changes[field][key]={value:after[key],updatedAt:stamp};
+   }
+  });
+  lastProgressState[field]=copyMap(after);
+ });
+ try{localStorage.setItem(DASHBOARD_STORAGE_KEY,JSON.stringify(ST));localStorage.setItem("cssdash_owner_uid",STUDENT_UID)}catch(e){}
+ if(Object.keys(changes).length)queueDashboardSync(changes);
+}
+function webDeviceId(){
+ var key="cssdash_device_id",value="";
+ try{value=localStorage.getItem(key)||"";if(!value){value="web_"+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem(key,value)}}catch(e){value="web_session"}
+ return value.replace(/[^A-Za-z0-9_-]/g,"_").slice(0,80);
+}
+var WEB_DEVICE_ID=webDeviceId();
+var remoteStudyDevices=(CLOUD_PROGRESS.studyCentre&&CLOUD_PROGRESS.studyCentre.devices)||{};
+var remoteWebStats=remoteStudyDevices[WEB_DEVICE_ID]||{};
+var localWebStats=ST.studyStats||{};
+function unionStrings(a,b){var out=[],seen={};(a||[]).concat(b||[]).forEach(function(x){x=String(x||"");if(x&&!seen[x]){seen[x]=1;out.push(x)}});return out}
+ST.studyStats={
+ deviceId:WEB_DEVICE_ID,platform:"web",ownerUid:STUDENT_UID,
+ studySessions:Math.max(Number(localWebStats.studySessions)||0,Number(remoteWebStats.studySessions)||0),
+ mcqAttempts:Math.max(Number(localWebStats.mcqAttempts)||0,Number(remoteWebStats.mcqAttempts)||0),
+ mcqCorrect:Math.max(Number(localWebStats.mcqCorrect)||0,Number(remoteWebStats.mcqCorrect)||0),
+ flashcardsReviewed:Math.max(Number(localWebStats.flashcardsReviewed)||0,Number(remoteWebStats.flashcardsReviewed)||0),
+ vocabularyReviewed:Math.max(Number(localWebStats.vocabularyReviewed)||0,Number(remoteWebStats.vocabularyReviewed)||0),
+ currentStreak:Math.max(Number(localWebStats.currentStreak)||0,Number(remoteWebStats.currentStreak)||0),
+ longestStreak:Math.max(Number(localWebStats.longestStreak)||0,Number(remoteWebStats.longestStreak)||0),
+ lastStudyDate:localWebStats.lastStudyDate||remoteWebStats.lastStudyDate||"",
+ articlesStudied:unionStrings(localWebStats.articlesStudied,remoteWebStats.articlesStudied),
+ activityDates:unionStrings(localWebStats.activityDates,remoteWebStats.activityDates),
+ flashcardsReviewedKeys:unionStrings(localWebStats.flashcardsReviewedKeys,remoteWebStats.flashcardsReviewedKeys),
+ vocabularyReviewedKeys:unionStrings(localWebStats.vocabularyReviewedKeys,remoteWebStats.vocabularyReviewedKeys),
+ updatedAt:Math.max(Number(localWebStats.updatedAt)||0,Number(remoteWebStats.updatedAt)||0)
+};
+try{localStorage.setItem(DASHBOARD_STORAGE_KEY,JSON.stringify(ST));localStorage.setItem("cssdash_owner_uid",STUDENT_UID)}catch(storageError){}
+function todayPKT(){return new Date(Date.now()+5*60*60*1000).toISOString().slice(0,10)}
+function streakFromDates(dates){
+ var set={};(dates||[]).forEach(function(d){if(/^\d{4}-\d{2}-\d{2}$/.test(d))set[d]=1});
+ var today=todayPKT(),cursor=new Date(today+"T00:00:00Z"),key=cursor.toISOString().slice(0,10);
+ if(!set[key]){cursor.setUTCDate(cursor.getUTCDate()-1);key=cursor.toISOString().slice(0,10);if(!set[key])return 0}
+ var n=0;while(set[key]){n++;cursor.setUTCDate(cursor.getUTCDate()-1);key=cursor.toISOString().slice(0,10)}return n;
+}
+var pendingStudyStatsSnapshot=null,studyStatsSyncTimer=null,studyStatsSyncInFlight=false,studyStatsRetryDelay=2000;
+function scheduleStudyStatsSync(delay){
+ if(studyStatsSyncTimer)clearTimeout(studyStatsSyncTimer);
+ studyStatsSyncTimer=setTimeout(flushStudyStatsSync,delay);
+}
+function queueStudyStatsSync(snapshot){
+ var copy=JSON.parse(JSON.stringify(snapshot||{}));
+ if(!pendingStudyStatsSnapshot||(Number(copy.updatedAt)||0)>=(Number(pendingStudyStatsSnapshot.updatedAt)||0)){
+  pendingStudyStatsSnapshot=copy;
+ }
+ scheduleStudyStatsSync(700);
+}
+function flushStudyStatsSync(){
+ studyStatsSyncTimer=null;
+ if(studyStatsSyncInFlight||!pendingStudyStatsSnapshot)return;
+ if(!window.CssPmsProgress||typeof window.CssPmsProgress.saveStudyDeviceProgress!=="function"){
+  scheduleStudyStatsSync(5000);return;
+ }
+ var batch=pendingStudyStatsSnapshot;
+ pendingStudyStatsSnapshot=null;
+ studyStatsSyncInFlight=true;
+ Promise.resolve().then(function(){
+  return window.CssPmsProgress.saveStudyDeviceProgress(batch);
+ }).then(function(){
+  studyStatsRetryDelay=2000;
+ },function(e){
+  if(!pendingStudyStatsSnapshot||(Number(batch.updatedAt)||0)>=(Number(pendingStudyStatsSnapshot.updatedAt)||0)){
+   pendingStudyStatsSnapshot=batch;
+  }
+  studyStatsRetryDelay=Math.min(studyStatsRetryDelay*2,60000);
+  console.warn("Study statistics sync pending; will retry:",e);
+ }).then(function(){
+  studyStatsSyncInFlight=false;
+  if(pendingStudyStatsSnapshot)scheduleStudyStatsSync(studyStatsRetryDelay);
+ });
+}
+window.addEventListener("online",function(){
+ if(pendingStudyStatsSnapshot)scheduleStudyStatsSync(500);
+});
+document.addEventListener("visibilitychange",function(){
+ if(!document.hidden&&pendingStudyStatsSnapshot)scheduleStudyStatsSync(500);
+});
+function saveStudyStats(){
+ ST.studyStats.updatedAt=Math.max(Date.now(),(Number(ST.studyStats.updatedAt)||0)+1);
+ sv();
+ queueStudyStatsSync(ST.studyStats);
+}
+if((Number(localWebStats.updatedAt)||0)>(Number(remoteWebStats.updatedAt)||0)){
+ queueStudyStatsSync(ST.studyStats);
+}
+function recordStudyActivity(articleKey){
+ var st=ST.studyStats,today=todayPKT(),dates=st.activityDates||[];
+ if(dates.indexOf(today)<0){dates.push(today);st.studySessions=(Number(st.studySessions)||0)+1;st.activityDates=dates;st.currentStreak=streakFromDates(dates);st.longestStreak=Math.max(Number(st.longestStreak)||0,st.currentStreak);st.lastStudyDate=today;}
+ if(articleKey){var articleRecord=find(articleKey);st.articlesStudied=unionStrings(st.articlesStudied,[articleRecord?articleRecord.t:articleKey]);}
+ saveStudyStats();
+}
+function combinedStudyStats(){
+ var devices=remoteStudyDevices,allDevices={};Object.keys(devices).forEach(function(k){allDevices[k]=devices[k]});allDevices[WEB_DEVICE_ID]=ST.studyStats;
+ var total={studySessions:0,mcqAttempts:0,mcqCorrect:0,flashcardsReviewed:0,vocabularyReviewed:0,longestStreak:0,articlesStudied:[],activityDates:[]};
+ var flashKeys=[],vocabKeys=[],legacyFlash=0,legacyVocab=0,legacySessions=0,fallbackCurrent=0;
+ Object.keys(allDevices).forEach(function(k){var d=allDevices[k]||{};["mcqAttempts","mcqCorrect"].forEach(function(f){total[f]+=Number(d[f])||0});
+  var currentToday=todayPKT(),currentYesterday=new Date(currentToday+"T00:00:00Z");currentYesterday.setUTCDate(currentYesterday.getUTCDate()-1);
+  var deviceLast=String(d.lastStudyDate||"");
+  if(deviceLast===currentToday||deviceLast===currentYesterday.toISOString().slice(0,10))fallbackCurrent=Math.max(fallbackCurrent,Number(d.currentStreak)||0);
+  var fk=d.flashcardsReviewedKeys||[],vk=d.vocabularyReviewedKeys||[];
+  legacyFlash+=Math.max(0,(Number(d.flashcardsReviewed)||0)-fk.length);legacyVocab+=Math.max(0,(Number(d.vocabularyReviewed)||0)-vk.length);
+  flashKeys=unionStrings(flashKeys,fk);vocabKeys=unionStrings(vocabKeys,vk);
+  var knownDates=unionStrings(d.activityDates,d.lastStudyDate?[d.lastStudyDate]:[]);
+  legacySessions+=Math.max(0,(Number(d.studySessions)||0)-knownDates.length);
+  total.longestStreak=Math.max(total.longestStreak,Number(d.longestStreak)||0);total.articlesStudied=unionStrings(total.articlesStudied,d.articlesStudied);total.activityDates=unionStrings(total.activityDates,knownDates);
+ });
+ total.studySessions=legacySessions+total.activityDates.length;
+ total.flashcardsReviewed=legacyFlash+flashKeys.length;total.vocabularyReviewed=legacyVocab+vocabKeys.length;
+ total.currentStreak=streakFromDates(total.activityDates);
+ if(total.currentStreak<=1&&fallbackCurrent>total.currentStreak)total.currentStreak=fallbackCurrent;
+ total.longestStreak=Math.max(total.longestStreak,total.currentStreak);return total;
+}
+window.cssPmsUpdateStudyProgress=function(progress){
+ remoteStudyDevices=(progress&&progress.devices)||{};
+ if(typeof S!=="undefined"&&S.v==="study")render();
+};
 function pc(n){var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return n==="Dawn"?"#01411C":"hsl("+h+",55%,36%)"}var PAP=["All"];A.forEach(function(a){if(PAP.indexOf(a.p)<0)PAP.push(a.p)});
 var S={v:"today",q:"",p:"All",s:"All",o:null,msg:""};
 var $=function(i){return document.getElementById(i)};
@@ -369,7 +636,40 @@ var rev=Object.keys(ST.status).filter(function(k){return ST.status[k]==="Revised
 return '<div class="stats"><div class="st"><b>'+all().length+'</b><span>articles analysed</span></div><div class="st"><b>'+Object.keys(ST.saved).filter(function(k){return ST.saved[k]}).length+'</b><span>saved</span></div><div class="st"><b>'+rev+'</b><span>revised</span></div></div>'
 +subscriptionCard()+'<div class="fl">'+chips(PAP,S.p,"paper")+'</div><div class="fl">'+chips(subs,S.s,"subj")+'</div>'
 +(L.length?'<div class="grid">'+L.map(card).join("")+'</div>':'<div class="pane"><p>No articles match. '+(S.v==="saved"?"Star an article to save it here.":"Try another filter.")+'</p></div>')}
-function sources(){return '<div class="pane"><h2>How this site updates</h2><p>A scheduled job on GitHub runs every morning, reads the newspaper feeds, fetches new editorials, asks the OpenAI API for study notes and saves them to data/articles.json. This page then shows them. Only the notes and a link are stored, never the full article. Your saved articles, status and notes stay in this browser.</p></div><div class="pane"><h2>Newspapers shown</h2><ul>'+PAP.slice(1).map(function(p){return"<li>"+esc(p)+"</li>"}).join("")+'</ul></div>'}
+function buildStudyFlashcards(){
+ var out=[];all().forEach(function(a){var key=id(a);
+  (a.studyFacts||[]).forEach(function(f,i){var front=typeof f==="string"?"Fact":(f.category||"Fact"),back=typeof f==="string"?f:[f.content||"",f.attribution?"Attribution: "+f.attribution:"",f.context?"Context: "+f.context:""].filter(Boolean).join("\n");if(back)out.push({key:String(a.id||key)+"_fact_"+i,article:key,title:a.t,front:front,back:back})});
+  (a.studyTerms||[]).forEach(function(t,i){if(t&&t.term)out.push({key:String(a.id||key)+"_term_"+i,article:key,title:a.t,front:t.term,back:(t.definition||"")+(t.usage_example?"\nExample: "+t.usage_example:"")})});
+ });return out;
+}
+function buildStudyVocabulary(){var out=[];all().forEach(function(a){(a.studyTerms||[]).forEach(function(t,i){if(t&&t.term)out.push({key:String(a.id||id(a))+"_term_"+i,article:id(a),title:a.t,term:t.term,definition:t.definition||"",example:t.usage_example||""})})});return out}
+function cacheOfflineNotes(){
+ try{
+  var cache={uid:STUDENT_UID,expiry:SUBSCRIPTION&&SUBSCRIPTION.expiry||"",cachedAt:Date.now(),articles:A.map(function(a){return {id:a.id,source:a.p,title:a.t,published:a.d,url:a.u,thesis:a.thesis,precis:a.precis,studyTerms:a.studyTerms||[],studyFacts:a.studyFacts||[],mcqs:a.mcqs||[]}})};
+  localStorage.setItem("cssdash_offline_cache",JSON.stringify(cache));
+ }catch(e){console.warn("Offline study cache could not be updated:",e)}
+}
+cacheOfflineNotes();
+function studyCentreView(){
+ var stats=combinedStudyStats(),cards=buildStudyFlashcards(),vocab=buildStudyVocabulary(),mcqArticles=all().filter(function(a){return a.mcqs&&a.mcqs.length}),offline=null;
+ try{offline=JSON.parse(localStorage.getItem("cssdash_offline_cache")||"null")}catch(e){}
+ var accuracy=stats.mcqAttempts?Math.round(stats.mcqCorrect*100/stats.mcqAttempts):0;
+ var globalFlashKeys=unionStrings(ST.studyStats.flashcardsReviewedKeys,Object.keys(remoteStudyDevices).reduce(function(out,k){return out.concat((remoteStudyDevices[k]||{}).flashcardsReviewedKeys||[])},[]));
+ var globalVocabKeys=unionStrings(ST.studyStats.vocabularyReviewedKeys,Object.keys(remoteStudyDevices).reduce(function(out,k){return out.concat((remoteStudyDevices[k]||{}).vocabularyReviewedKeys||[])},[]));
+ var flashHtml=cards.map(function(c){var revealed=!!ST.flashcardRevealed[c.key],reviewed=!!ST.flashcardReviewed[c.key]||globalFlashKeys.indexOf(c.key)>=0;return '<div class="ac"><span class="tg">'+esc(c.title)+'</span><h3>'+esc(c.front)+'</h3>'+(revealed?'<p>'+esc(c.back)+'</p>':'<p>Recall the answer before revealing it.</p>')+'<button class="rb" data-a="study-flashcard" data-k="'+esc(c.key)+'">'+(revealed?'Hide answer':'Reveal answer')+'</button> <button class="rb" data-a="study-flashcard-reviewed" data-k="'+esc(c.key)+'" '+(reviewed?'disabled':'')+'>'+(reviewed?'Reviewed':'Mark reviewed')+'</button></div>'}).join("");
+ var vocabHtml=vocab.map(function(v){var done=!!ST.vocabularyReviewed[v.key]||globalVocabKeys.indexOf(v.key)>=0;return '<div class="ac"><h3>'+esc(v.term)+'</h3><p>'+esc(v.definition)+'</p>'+(v.example?'<p><i>'+esc(v.example)+'</i></p>':'')+'<span class="tg">'+esc(v.title)+'</span><p><button class="rb" data-a="study-vocab-reviewed" data-k="'+esc(v.key)+'" '+(done?'disabled':'')+'>'+(done?'Learned':'Mark learned')+'</button></p></div>'}).join("");
+ var mcqHtml=mcqArticles.map(function(a){return '<div class="ac"><h3>'+esc(a.t)+'</h3><p>'+a.mcqs.length+' practice questions</p><button class="rb" data-a="study-mcq" data-k="'+esc(id(a))+'">Practise MCQs</button></div>'}).join("");
+ var cached=offline&&Array.isArray(offline.articles)?offline.articles.length:0,expiry=offline&&offline.expiry?new Date(offline.expiry):null,cacheValid=!!(expiry&&!isNaN(expiry.getTime())&&expiry.getTime()>Date.now());
+ return '<div class="pane"><h2>Study Centre</h2><p>Your six study tools are available here. Progress is saved on this device and synchronised to your account when connected and authorised.</p></div>'+
+ '<div class="stats"><div class="st"><b>'+stats.currentStreak+'</b><span>current streak</span></div><div class="st"><b>'+stats.longestStreak+'</b><span>longest streak</span></div><div class="st"><b>'+stats.studySessions+'</b><span>study days</span></div></div>'+
+ '<div class="pane"><h2>1. Daily Study Streak</h2><p>Current streak: <b>'+stats.currentStreak+' day(s)</b>. Longest recorded streak: <b>'+stats.longestStreak+' day(s)</b>.</p><p>Study sessions: '+stats.studySessions+'</p></div>'+
+ '<div class="pane"><h2>2. MCQ Practice</h2><p>Practise questions from the authorised editorial analyses. Results are recorded when you submit a quiz.</p>'+(mcqHtml||'<p>No MCQs are available yet.</p>')+'</div>'+
+ '<div class="pane"><h2>3. Revision Flashcards</h2><p>'+cards.length+' cards generated from facts and terminology. Reviewed: '+globalFlashKeys.length+'</p>'+(flashHtml||'<p>No flashcards are available yet.</p>')+'</div>'+
+ '<div class="pane"><h2>4. Performance Dashboard</h2><p>Across your synchronised devices:</p><ul><li>Articles studied: '+stats.articlesStudied.length+'</li><li>MCQs attempted: '+stats.mcqAttempts+'</li><li>Correct answers: '+stats.mcqCorrect+'</li><li>MCQ accuracy: '+accuracy+'%</li><li>Flashcards reviewed: '+stats.flashcardsReviewed+'</li><li>Vocabulary learned: '+stats.vocabularyReviewed+'</li></ul></div>'+
+ '<div class="pane"><h2>5. Offline Study Mode</h2><p>'+cached+' authorised study-note records are cached in this browser. Full newspaper article text is not stored.</p><p>'+(cacheValid?'Cached access is within the recorded subscription expiry.':'The local cache is not currently authorised or its subscription has expired.')+'</p><p>Keep this page open before going offline. Reconnect and sign in to refresh the cache and synchronise progress.</p>'+(offline&&offline.cachedAt?'<small>Last cache: '+new Date(offline.cachedAt).toLocaleString()+'</small>':'')+'</div>'+
+ '<div class="pane"><h2>6. Daily English Vocabulary</h2><p>'+vocab.length+' terms available. Learned: '+globalVocabKeys.length+'</p>'+(vocabHtml||'<p>No vocabulary terms are available yet.</p>')+'</div>';
+}
+function sources(){return '<div class="pane"><h2>How this site updates</h2><p>A scheduled job on GitHub runs every morning, reads the newspaper feeds, fetches new editorials, asks the OpenAI API for study notes and saves them to data/articles.json. This page then shows them. Only the notes and a link are stored, never the full article. Your saved articles, reading status, notes, quiz answers and study progress synchronise to your student account across devices.</p></div><div class="pane"><h2>Newspapers shown</h2><ul>'+PAP.slice(1).map(function(p){return"<li>"+esc(p)+"</li>"}).join("")+'</ul></div>'}
 function analyse(){return '<div class="pane"><h2>Analyse any article</h2><p>Paste the text of an editorial or column. Claude will write study notes in the same format: thesis, precis, argument structure, analysis, terms, exam questions and essay outline. Your first use asks for permission.</p><input id="mt" placeholder="Title (optional)" style="width:100%;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><input id="mp" placeholder="Newspaper (e.g. The News)" style="width:100%;padding:8px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"><textarea id="mx" placeholder="Paste article text here"></textarea><p><button class="rb" style="padding:9px 16px" data-a="gen">Generate study notes</button> <span id="gs">'+esc(S.msg)+'</span></p></div>'}
 function promptView(){var PR=`TASK: Update my CSS/PMS Daily Briefing dashboard with today's newspaper articles.
 
@@ -418,7 +718,7 @@ a.an.map(function(g){return '<h3>'+esc(g[0])+'</h3><ul>'+li(g[1])+'</ul>'}).join
 (a.essayThesis?'<p><b>Thesis:</b> '+esc(a.essayThesis)+'</p>':'')+
 (a.essay.length?a.essay.map(function(h,i){return '<h3>'+esc(/^\d+\./.test(h.heading)?h.heading:(i+1)+'. '+h.heading)+'</h3>'+(h.subheadings.length?'<ol type="i">'+h.subheadings.map(function(sub){return '<li>'+esc(String(sub).replace(/^[ivxlcdm]+\.\s*/i,""))+'</li>'}).join("")+'</ol>':'')}).join("")+(a.essay.every(function(h){return !h.subheadings.length})?'<p><i>Detailed subheadings are not available in this older analysis.</i></p>':''):'<p>Structured essay outline is not available in this older analysis.</p>')+
 '<h2 id="s11">Test your understanding: five MCQs</h2>'+quiz+
-'<h2 id="s12">My notes</h2><textarea id="nt" data-k="'+k+'" placeholder="Write your own notes here (saved on this device)">'+esc(ST.notes[k]||"")+'</textarea>'+
+'<h2 id="s12">My notes</h2><textarea id="nt" data-k="'+k+'" placeholder="Write your own notes here (synchronised to your account)">'+esc(ST.notes[k]||"")+'</textarea>'+
 (a.u?'<p><a href="'+esc(a.u)+'" target="_blank" rel="noopener">Read the complete article on the newspaper site ?</a></p>':"")+'</div>';
 }
 
@@ -426,8 +726,8 @@ function reader(a){
 var k=id(a);
 return '<div class="rd" id="rd"><div class="pg"><i id="pgi"></i></div><div class="tb"><button data-a="close">Back</button><button data-a="fs" data-k="-1">A-</button><button data-a="fs" data-k="1">A+</button><button data-a="th">Theme</button><button data-a="save" data-k="'+k+'">'+(ST.saved[k]?"Saved":"Save")+'</button><button data-a="stat" data-k="'+k+'">'+(ST.status[k]||"Unread")+'</button><button data-a="dl" data-k="'+k+'">Download notes</button><button data-a="print">Print</button></div><div class="rw"><div class="toc"><a href="#s1">Thesis</a><a href="#s2">Precis</a><a href="#s3">Argument</a><a href="#s4">Context</a><a href="#s5">Analysis</a><a href="#s6">Terms</a><a href="#s7">Facts</a><a href="#s8">Exam answers</a><a href="#s9">Introduction</a><a href="#s10">Essay outline</a><a href="#s11">MCQ test</a><a href="#s12">My notes</a></div>'+body(a)+'</div></div>';
 }function find(k){return all().filter(function(a){return id(a)===k})[0]}
-function render(){var h='<div class="top"><div class="in"><h1> CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' | Study notes from newspapers in Pakistan</p>'+subscriptionReminder()+'<div class="bar"><input id="q" placeholder="Search articles, topics, facts..." value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb" data-a="th">Theme</button><button class="nb signout-btn" data-a="signout">Sign out</button></div></div></div><div class="main">'
-+(S.v==="sources"?sources():home())+'</div>'+(S.o?reader(S.o):"");
+function render(){var h='<div class="top"><div class="in"><h1> CSS/PMS Daily Briefing</h1><p>'+new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+' | Study notes from newspapers in Pakistan</p>'+subscriptionReminder()+'<div class="bar"><input id="q" placeholder="Search articles, topics, facts..." value="'+esc(S.q)+'"><button class="nb '+(S.v==="today"?"on":"")+'" data-a="v" data-k="today">Today</button><button class="nb '+(S.v==="saved"?"on":"")+'" data-a="v" data-k="saved">Saved</button><button class="nb '+(S.v==="sources"?"on":"")+'" data-a="v" data-k="sources">Sources</button><button class="nb '+(S.v==="study"?"on":"")+'" data-a="v" data-k="study">Study Centre</button><button class="nb" data-a="th">Theme</button><button class="nb signout-btn" data-a="signout">Sign out</button></div></div></div><div class="main">'
++(S.v==="sources"?sources():(S.v==="study"?studyCentreView():home()))+'</div>'+(S.o?reader(S.o):"");
 var q=$("q");
 var had=document.activeElement===q;
 var cursor=had?q.selectionStart:0;
@@ -513,6 +813,10 @@ if(a==="mcq-submit"){
   return;
  }
  ST.mcqSubmitted[k]=true;
+ var score=article.mcqs.filter(function(q,i){return Number(answers[i])===Number(q.correct_option)}).length;
+ ST.studyStats.mcqAttempts=(Number(ST.studyStats.mcqAttempts)||0)+article.mcqs.length;
+ ST.studyStats.mcqCorrect=(Number(ST.studyStats.mcqCorrect)||0)+score;
+ recordStudyActivity(k);
  sv();
  var sc=$("rd")?$("rd").scrollTop:0;
  render();
@@ -529,9 +833,31 @@ if(a==="mcq-retry"){
  if($("rd"))$("rd").scrollTop=sc;
  return;
 }
+if(a==="study-flashcard"){
+ ST.flashcardRevealed[k]=!ST.flashcardRevealed[k];sv();render();return;
+}
+if(a==="study-flashcard-reviewed"){
+ if(!ST.flashcardReviewed[k]){
+  ST.flashcardReviewed[k]=true;ST.studyStats.flashcardsReviewed=(Number(ST.studyStats.flashcardsReviewed)||0)+1;
+  ST.studyStats.flashcardsReviewedKeys=unionStrings(ST.studyStats.flashcardsReviewedKeys,[k]);
+  var fc=buildStudyFlashcards().filter(function(x){return x.key===k})[0];recordStudyActivity(fc?fc.title:"");
+ }
+ sv();render();return;
+}
+if(a==="study-vocab-reviewed"){
+ if(!ST.vocabularyReviewed[k]){
+  ST.vocabularyReviewed[k]=true;ST.studyStats.vocabularyReviewed=(Number(ST.studyStats.vocabularyReviewed)||0)+1;
+  ST.studyStats.vocabularyReviewedKeys=unionStrings(ST.studyStats.vocabularyReviewedKeys,[k]);
+  var vt=buildStudyVocabulary().filter(function(x){return x.key===k})[0];recordStudyActivity(vt?vt.title:"");
+ }
+ sv();render();return;
+}
+if(a==="study-mcq"){
+ S.v="today";S.o=find(k);if(S.o)recordStudyActivity(k);render();return;
+}
 if(a==="v"){S.v=k;S.o=null}else if(a==="paper")S.p=k;else if(a==="subj")S.s=k;
 else if(a==="save"){ST.saved[k]=!ST.saved[k];sv()}
-else if(a==="open"){S.o=find(k);if(S.o&&ST.status[k]!=="Revised"&&!ST.status[k]){ST.status[k]="Reading";sv()}}
+else if(a==="open"){S.o=find(k);if(S.o){if(ST.status[k]!=="Revised"&&!ST.status[k])ST.status[k]="Reading";recordStudyActivity(k);sv()}}
 else if(a==="close"){S.o=null}
 else if(a==="fs"){ST.fs=Math.min(26,Math.max(14,ST.fs+(+k)*2));sv()}
 else if(a==="th"){var T=["auto","dark","sepia","light"];ST.theme=T[(T.indexOf(ST.theme)+1)%4];sv()}
@@ -745,14 +1071,34 @@ render();
 
 }).catch(function(e){
  console.error("Article loading error:",e);
-
- document.getElementById("app").innerHTML=
- '<div style="padding:25px;font-family:Arial">'+
- '<h2>Unable to load articles</h2>'+
- '<p>Check that data/articles.json exists and contains valid JSON.</p>'+
- '<p>Run this website through a local web server rather than opening the HTML file directly.</p>'+
- '<p>Error: '+String(e.message||e)+'</p>'+
- '</div>';
+ try{
+  var failedUid=window.firebase&&firebase.auth&&firebase.auth().currentUser?firebase.auth().currentUser.uid:"";
+  if(window.StudyNative)window.StudyNative.postMessage(JSON.stringify({type:"studySyncFailed",uid:failedUid}));
+ }catch(ignoreBridge){}
+ var app=document.getElementById("app"),cache=null;
+ try{cache=JSON.parse(localStorage.getItem("cssdash_offline_cache")||"null")}catch(ignore){}
+ function safe(x){return String(x||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+ var expiry=cache&&cache.expiry?new Date(cache.expiry):null;
+ var signedInUid="";
+ try{signedInUid=window.firebase&&firebase.auth&&firebase.auth().currentUser?firebase.auth().currentUser.uid:""}catch(ignoreAuth){}
+ var valid=!!(cache&&cache.uid&&signedInUid===cache.uid&&expiry&&!isNaN(expiry.getTime())&&expiry.getTime()>Date.now()&&Array.isArray(cache.articles));
+ if(valid){
+  var rows=cache.articles.map(function(a){
+   var terms=(a.studyTerms||[]).map(function(t){return "<li><b>"+safe(t.term)+"</b>: "+safe(t.definition)+"</li>"}).join("");
+   var facts=(a.studyFacts||[]).map(function(f){return "<li>"+safe(typeof f==="string"?f:(f.content||""))+(f.attribution?" — "+safe(f.attribution):"")+"</li>"}).join("");
+   return "<article style='padding:18px;margin:14px 0;background:white;border:1px solid #e4eaf1;border-radius:12px'>"+
+    "<small>"+safe(a.source)+" · "+safe(a.published)+"</small><h2>"+safe(a.title)+"</h2>"+
+    "<h3>Central thesis</h3><p>"+safe(a.thesis)+"</p><h3>Precis</h3><p>"+safe(a.precis)+"</p>"+
+    (facts?"<h3>Facts to memorise</h3><ul>"+facts+"</ul>":"")+
+    (terms?"<h3>Vocabulary</h3><ul>"+terms+"</ul>":"")+
+    (a.url?"<p><a href='"+safe(a.url)+"' target='_blank' rel='noopener'>Open original newspaper article</a></p>":"")+"</article>";
+  }).join("");
+  app.innerHTML="<main style='max-width:900px;margin:auto;padding:24px;font-family:Arial;color:#263548;background:#f3f6fa;min-height:100vh'>"+
+   "<h1 style='color:#173b63'>CSS/PMS Daily Briefing — Offline Study Mode</h1>"+
+   "<p>Showing locally cached study notes. Subscription cache expiry: <b>"+safe(expiry.toLocaleString())+"</b>. Reconnect and sign in to refresh and synchronise progress.</p>"+rows+"</main>";
+ }else{
+  app.innerHTML='<div style="padding:25px;font-family:Arial"><h2>Unable to load articles</h2><p>No valid offline study cache is available. Connect to the internet and sign in with an active subscription.</p><p>Error: '+safe(e.message||e)+'</p></div>';
+ }
 });
 </script>
 </body></html>
