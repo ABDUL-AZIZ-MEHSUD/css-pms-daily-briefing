@@ -1,8 +1,49 @@
 {
-  "last_updated": "2026-11-27T10:54:42.063633+00:00",
-  "total_articles": 51,
-  "new_articles_today": 6,
+  "last_updated": "2026-11-28T10:29:59.023001+00:00",
+  "total_articles": 54,
+  "new_articles_today": 3,
   "articles": [
+    {
+      "id": "fc7d074771093778",
+      "title": "Cueing up greatness",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2642714/cueing-up-greatness",
+      "published": "2026-11-27T19:32:08+00:00",
+      "author": "editorial",
+      "rss_summary": "Rana Irfan's commanding 5-0 victory over three-time world champion",
+      "collection_status": "collected",
+      "analysis_status": "pending",
+      "collected_at": "2026-11-28T10:29:59.021388+00:00"
+    },
+    {
+      "id": "9347286f71636592",
+      "title": "Censorship as statecraft",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2642713/censorship-as-statecraft",
+      "published": "2026-11-27T19:32:08+00:00",
+      "author": "editorial",
+      "rss_summary": "Pakistani dramas do not focus on issues that could threaten any such principle in India",
+      "collection_status": "collected",
+      "analysis_status": "completed",
+      "collected_at": "2026-11-28T10:29:59.021516+00:00",
+      "analysed_at": "2026-11-28T10:31:39.898215+00:00"
+    },
+    {
+      "id": "6812be4f9ca0146b",
+      "title": "Of stances and stunts",
+      "source": "The Express Tribune",
+      "category": "Opinion and Editorials",
+      "url": "https://tribune.com.pk/story/2642712/of-stances-and-stunts",
+      "published": "2026-11-27T19:32:08+00:00",
+      "author": "editorial",
+      "rss_summary": "Warming of political tempers in the chills of winter seems to be a precursor to more trouble to come",
+      "collection_status": "collected",
+      "analysis_status": "completed",
+      "collected_at": "2026-11-28T10:29:59.021604+00:00",
+      "analysed_at": "2026-11-28T10:32:29.181617+00:00"
+    },
     {
       "id": "d9cbd65a22470985",
       "title": "Beyond our means",
@@ -55,8 +96,9 @@
       "author": "editorial",
       "rss_summary": "Authorities have repeatedly publicised the arrests of suspected traffickers as evidence of progress",
       "collection_status": "collected",
-      "analysis_status": "pending",
-      "collected_at": "2026-11-27T10:54:42.062182+00:00"
+      "analysis_status": "completed",
+      "collected_at": "2026-11-27T10:54:42.062182+00:00",
+      "analysed_at": "2026-11-28T10:33:08.517347+00:00"
     },
     {
       "id": "33c238e4b40dfc4d",
@@ -68,8 +110,9 @@
       "author": "none@none.com (Samia Salik)",
       "rss_summary": "IMAGINE Sakina, up at the crack of dawn to go see her precious Billo, a fine cow her father had given her. This would be Sakina’s 30th day selling Billo’s milk to a nearby farm owner who wanted good milk for his young children. She was excited to get paid. She got ready to head out, feeling like a businesswoman. Three years later, Sakina has four animals. She feeds them, looks after them and gets the milk ready for collection. She knows when a cow is giving less milk, when feed becomes heavier on the pocket and when it makes sense to buy another animal. Her 40-plus customers know how rich the milk is. But ask them where it comes from and they’ll tell you it’s from Kareem bhai, the doodh wala. Kareem is Sakina’s husband. He delivers the milk and his name is also the one on the ledger that she has maintained all these years. Sakina is sure she could manage 10 animals. She decides to start with two more cows and goes to a bank for a loan. That’s when the name in the ledger becomes a problem. She has years of milk sales to show the bank. She’s kept the records herself but they are in Kareem’s name. The bank decides against giving her a loan. Pakistan’s agricultural lending ambitions mu",
       "collection_status": "collected",
-      "analysis_status": "pending",
-      "collected_at": "2026-11-27T10:54:41.957978+00:00"
+      "analysis_status": "fetch_error",
+      "collected_at": "2026-11-27T10:54:41.957978+00:00",
+      "analysis_message": "403 Client Error: Forbidden for url: https://www.dawn.com/news/2047389/more-credit-fewer-women"
     },
     {
       "id": "68563d4c30eea540",
@@ -235,8 +278,9 @@
       "author": "none@none.com (Salma Khan)",
       "rss_summary": "IMAGINE a woman in Islamabad arriving at a government office to pay a fee. She has the money, but no bank account and no smartphone of her own. The counter no longer accepts cash. The official points her towards a QR code. She asks someone nearby to make the payment for her. The payment goes through, but she has had to depend on a stranger to make it. This is a hypothetical situation, but it captures a problem beneath the government’s plan to make Islamabad cashless by the end of December. Do people have the means to participate? And what happens to those who do not? There are good reasons to encourage digital payments. They can make transactions easier to trace, reduce delays and help bring economic activity into the formal system. Raast and other payment infrastructure can make this possible at a scale that cash cannot. But encouraging digital payments is different from withdrawing cash before people have a workable alternative. That distinction matters. The Pakistan Bureau of Statistics’ Household Integrated Economic Survey 2024-25 puts the gap in perspective. Internet use among individuals stands at 57 per cent, falling to 49pc in rural areas, compared with 69pc in urban areas.",
       "collection_status": "collected",
-      "analysis_status": "pending",
-      "collected_at": "2026-11-25T11:20:51.591688+00:00"
+      "analysis_status": "fetch_error",
+      "collected_at": "2026-11-25T11:20:51.591688+00:00",
+      "analysis_message": "403 Client Error: Forbidden for url: https://www.dawn.com/news/2046934/cashless-divide"
     },
     {
       "id": "9f958ce17fec2796",
